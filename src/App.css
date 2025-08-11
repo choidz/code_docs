@@ -8,10 +8,12 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start; /* 콘텐츠를 위에서부터 정렬 */
+  justify-content: flex-start;
+  /* 콘텐츠를 위에서부터 정렬 */
   font-size: calc(10px + 2vmin);
   color: white;
-  padding: 40px 20px; /* 위쪽 패딩을 늘려 여유 공간 확보 */
+  padding: 40px 20px;
+  /* 위쪽 패딩을 늘려 여유 공간 확보 */
   box-sizing: border-box;
 }
 
@@ -30,7 +32,8 @@
 .input-form {
   width: 100%;
   max-width: 700px;
-  background-color: #20232a; /* 헤더보다 약간 밝은 색 */
+  background-color: #20232a;
+  /* 헤더보다 약간 밝은 색 */
   padding: 20px;
   border-radius: 8px;
   border: 1px solid #444;
@@ -69,7 +72,8 @@
   font-size: 16px;
   font-weight: bold;
   color: white;
-  background-color: #61dafb; /* 리액트 블루 색상으로 변경 */
+  background-color: #61dafb;
+  /* 리액트 블루 색상으로 변경 */
   color: #20232a;
   border: none;
   border-radius: 4px;
@@ -103,7 +107,8 @@
   border: 1px solid #555;
   background-color: #282c34;
   color: #ddd;
-  font-family: inherit; /* 부모 폰트를 상속받도록 설정 */
+  font-family: inherit;
+  /* 부모 폰트를 상속받도록 설정 */
   font-size: 14px;
   box-sizing: border-box;
   cursor: pointer;
@@ -140,7 +145,8 @@
   border: 1px solid #555;
   background-color: #282c34;
   color: #ddd;
-  font-family: sans-serif; /* 설명은 일반 폰트로 */
+  font-family: sans-serif;
+  /* 설명은 일반 폰트로 */
   font-size: 15px;
 }
 
@@ -150,7 +156,8 @@
   font-size: 15px;
   font-weight: bold;
   color: white;
-  background-color: #2ea44f; /* GitHub 스타일의 녹색 버튼 */
+  background-color: #2ea44f;
+  /* GitHub 스타일의 녹색 버튼 */
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -160,4 +167,144 @@
 
 .add-to-docs-button:hover {
   background-color: #2c974b;
+}
+
+.tab-container {
+  display: flex;
+  margin-bottom: 20px;
+  background-color: #20232a;
+  border-radius: 8px;
+  padding: 5px;
+  border: 1px solid #444;
+}
+
+.tab-button {
+  flex: 1;
+  padding: 10px 15px;
+  cursor: pointer;
+  border: none;
+  background-color: transparent;
+  color: #aaa;
+  font-size: 16px;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  border-radius: 6px;
+}
+
+.tab-button.active {
+  background-color: #61dafb;
+  color: #20232a;
+}
+
+.or-divider {
+  text-align: center;
+  font-weight: bold;
+  color: #888;
+  margin: 20px 0;
+}
+
+
+.code-preview {
+  background-color: #282c34;
+  border-radius: 4px;
+  padding: 10px;
+  color: #ddd;
+  font-family: 'Fira Code', 'Consolas', monospace;
+  white-space: pre-wrap;
+  /* 코드가 길어지면 자동 줄바꿈 */
+  word-wrap: break-word;
+}
+
+.ai-button {
+  width: 100%;
+  padding: 10px;
+  font-size: 15px;
+  font-weight: bold;
+  color: white;
+  background: linear-gradient(45deg, #4f39fa, #da47a3);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  margin-top: 10px;
+}
+
+.ai-button:hover {
+  opacity: 0.9;
+}
+
+.ai-result {
+  margin-top: 15px;
+  padding: 15px;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  font-family: sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.ai-result.loading {
+  text-align: center;
+  color: #aaa;
+  font-style: italic;
+}
+
+.ai-toggle-container {
+  display: flex;
+  align-items: center;
+  height: 34px;
+  /* 버튼 높이와 맞추기 위함 */
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 28px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-switch .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #444;
+  border-radius: 28px;
+  transition: .4s;
+}
+
+.toggle-switch .slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  border-radius: 50%;
+  transition: .4s;
+}
+
+.toggle-switch input:checked+.slider {
+  background-color: #61dafb;
+  /* React Blue */
+}
+
+.toggle-switch input:checked+.slider:before {
+  transform: translateX(22px);
+}
+
+.toggle-label {
+  margin-left: 12px;
+  cursor: pointer;
+  font-size: 15px;
 }
