@@ -31,7 +31,7 @@ function createWindow() {
 
     // 디버깅을 위해 개발자 도구를 강제로 엽니다.
     // 문제가 해결되면 이 줄은 지우거나 if(isDev) 안으로 옮기세요.
-    mainWindow.webContents.openDevTools();
+    // mainWindow.webContents.openDevTools();
 }
 
 app.whenReady().then(async () => {
