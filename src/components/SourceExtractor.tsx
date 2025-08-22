@@ -1,44 +1,41 @@
 import React, { useState, useEffect } from 'react';
+import type { Node, Edge } from 'reactflow';
 import Section from './ui/Section';
 import AnalysisForm from './ui/AnalysisForm';
 import ResultDisplay from './ui/ResultDisplay';
+import DependencyGraph from './ui/DependencyGraph';
 import JSZip from 'jszip';
+import { runAdvancedKeywordAnalysis, runDependencyAnalysis, parseKeywords } from '../lib/analysis';
 
-// 1. 분리해둔 분석 라이브러리에서 필요한 함수들을 가져옵니다.
-import { runKeywordAnalysis, runDependencyAnalysis, parseKeywords } from '../lib/analysis';
+const isElectron = !!window.electronAPI;
+
+interface GraphData {
+    nodes: Node[];
+    edges: Edge[];
+}
 
 const SourceExtractor = () => {
-    // --- 상태 관리(State Management) ---
-
-    // 1. 분석 옵션 관련 상태 (기존과 동일)
+    // --- 상태 관리 (기존과 동일) ---
     const [analysisMode, setAnalysisMode] = useState<'keyword' | 'dependency'>('dependency');
-    const [keywords, setKeywords] = useState<string>('private void, EXEC, SELECT');
+    const [keywords, setKeywords] = useState<string>('private, SELECT');
     const [shouldExtractBlocks, setShouldExtractBlocks] = useState<boolean>(true);
     const [targetFunction, setTargetFunction] = useState<string>('');
-
-    // 2. 소스 제공 방식 관련 상태 (기존과 동일)
     const [sourceMethod, setSourceMethod] = useState<'paste' | 'upload' | 'folder'>('paste');
     const [pastedCode, setPastedCode] = useState<string>('');
     const [folderPath, setFolderPath] = useState<string>('');
-    const [selectedFilePath, setSelectedFilePath] = useState<string>(''); // Electron 전용
+    const [selectedFilePath, setSelectedFilePath] = useState<string>('');
     const [selectedFileName, setSelectedFileName] = useState<string>('');
-
-    // 3. 결과 및 UI 제어 관련 상태 (기존과 동일)
     const [extractionResult, setExtractionResult] = useState<string>('');
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [statusMessage, setStatusMessage] = useState<string>('');
     const [isElectron, setIsElectron] = useState<boolean>(false);
-
-    // 4. [수정] 웹 브라우저에서 파일 내용을 읽기 위해 File 객체를 저장할 상태 추가
     const [selectedFileObject, setSelectedFileObject] = useState<File | null>(null);
+    const [graphData, setGraphData] = useState<GraphData>({ nodes: [], edges: [] });
 
-    // --- 초기 설정 및 Electron 리스너 ---
     useEffect(() => {
         const electronCheck = !!window.electronAPI;
         setIsElectron(electronCheck);
-
         if (electronCheck) {
-            // Electron 환경일 때만 IPC 리스너를 설정합니다.
             window.electronAPI.onAnalysisResult((result) => {
                 setExtractionResult(result);
                 setIsLoading(false);
@@ -49,7 +46,6 @@ const SourceExtractor = () => {
         }
     }, []);
 
-    // 웹/Electron 환경을 모두 처리하도록 파일 변경 핸들러 수정
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) {
@@ -58,15 +54,8 @@ const SourceExtractor = () => {
             setSelectedFileObject(null);
             return;
         }
-
-        // [핵심 1] 모든 환경(웹, Electron)에서 공통으로 실행됩니다.
-        // - UI에 보여줄 파일 이름을 저장합니다.
-        // - 웹 브라우저에서 파일 내용을 직접 읽기 위해 '파일 객체' 자체를 저장합니다.
         setSelectedFileName(file.name);
         setSelectedFileObject(file);
-
-        // [핵심 2] Electron 환경에서만 특별히 실행됩니다.
-        // - main.js의 파일 시스템(fs)이 접근할 수 있도록 파일의 '전체 경로'를 추가로 저장합니다.
         if (isElectron) {
             const filePath = (file as any).path;
             if (filePath) {
@@ -77,12 +66,11 @@ const SourceExtractor = () => {
         }
     };
 
-    // 웹/Electron 환경에 따라 로직을 분기하도록 분석 실행 핸들러 수정
-    // 3. [수정됨] 웹 환경의 ZIP 파일 처리를 포함하도록 분석 핸들러를 개선합니다.
     const handleRunAnalysis = async () => {
         setIsLoading(true);
         setExtractionResult('');
         setStatusMessage('');
+        setGraphData({ nodes: [], edges: [] });
 
         if (isElectron) {
             window.electronAPI.runAnalysis({
@@ -91,25 +79,21 @@ const SourceExtractor = () => {
                 filePath: selectedFilePath,
             });
         } else {
-            // === 웹 브라우저 환경 ===
             try {
                 if (sourceMethod === 'folder') {
                     alert("폴더 분석은 데스크톱 앱에서만 지원됩니다.");
                     setIsLoading(false);
                     return;
                 }
-
                 let result = '';
                 if (sourceMethod === 'paste') {
-                    result = performWebAnalysis(pastedCode);
+                    result = performWebAnalysis(pastedCode, 'Pasted Code');
                 } else if (sourceMethod === 'upload' && selectedFileObject) {
-                    // 파일 확장자를 확인하여 ZIP 파일인지 판별합니다.
                     if (selectedFileObject.name.toLowerCase().endsWith('.zip')) {
                         result = await performWebZipAnalysis(selectedFileObject);
                     } else {
-                        // 일반 텍스트 파일 처리
                         const content = await selectedFileObject.text();
-                        result = performWebAnalysis(content);
+                        result = performWebAnalysis(content, selectedFileObject.name);
                     }
                 }
                 setExtractionResult(result || '분석 결과를 찾지 못했습니다.');
@@ -122,18 +106,19 @@ const SourceExtractor = () => {
         }
     };
 
-    // 4. [추가] 웹 브라우저에서 ZIP 파일의 압축을 풀고 분석하는 헬퍼 함수
     const performWebZipAnalysis = async (file: File): Promise<string> => {
         setStatusMessage('웹 브라우저에서 ZIP 파일 압축을 해제하고 분석합니다...');
-        const zip = await JSZip.loadAsync(file); // File 객체를 직접 넘겨줍니다.
+        const zip = await JSZip.loadAsync(file);
         let fullReport = `# 📝 분석 결과 (ZIP: ${file.name})\n\n`;
         let foundSomething = false;
 
-        // for...of 루프와 Object.values를 사용하여 각 파일을 순회합니다.
         for (const zipEntry of Object.values(zip.files)) {
             if (!zipEntry.dir) {
                 const content = await zipEntry.async('string');
-                const reportSegment = performWebAnalysis(content);
+                const reportSegment = performWebAnalysis(content, zipEntry.name);
+
+                // ZIP 파일 분석 시에는 그래프를 표시하지 않고 초기화합니다.
+                setGraphData({ nodes: [], edges: [] });
 
                 if (reportSegment && reportSegment !== '분석 결과를 찾지 못했습니다.') {
                     fullReport += `## 📄 소스: ${zipEntry.name}\n${reportSegment}\n`;
@@ -144,38 +129,38 @@ const SourceExtractor = () => {
         return foundSomething ? fullReport : 'ZIP 파일 내에서 분석 결과를 찾지 못했습니다.';
     };
 
-
-    // 웹 환경 분석 헬퍼 함수 - 결과가 없을 때 더 구체적인 메시지를 반환하도록 개선
-    const performWebAnalysis = (content: string): string => {
+    const performWebAnalysis = (content: string, sourceName: string): string => {
         setStatusMessage('웹 브라우저에서 분석을 수행합니다...');
 
         if (analysisMode === 'keyword') {
             const parsedKeywords = parseKeywords(keywords);
-            // 키워드가 입력되었는지 먼저 확인합니다.
-            if (parsedKeywords.length === 0) {
-                return '검색할 키워드를 입력해주세요.';
+            if (parsedKeywords.length === 0) return '검색할 키워드를 입력해주세요.';
+
+            const findings = runAdvancedKeywordAnalysis(content, parsedKeywords);
+
+            if (findings.length > 0) {
+                // [수정] 새로운 키워드 그래프 생성 함수를 호출합니다.
+                const newGraphData = createKeywordGraphData(findings, parsedKeywords);
+                setGraphData(newGraphData);
+
+                let report = '';
+                findings.forEach(finding => {
+                    report += `\n---\n**[함수: ${finding.functionName}] 키워드 \`${finding.foundKeywords.join(', ')}\` 발견**\n\`\`\`javascript\n${finding.content}\n\`\`\`\n`;
+                });
+                return report;
             }
-            console.log(parsedKeywords)
-            const result = runKeywordAnalysis(content, parsedKeywords, shouldExtractBlocks);
-            // 결과가 빈 문자열일 경우, 키워드를 찾지 못했다는 메시지를 반환합니다.
-            return result || '입력하신 키워드를 소스 코드에서 찾을 수 없습니다.';
+            return '입력하신 키워드를 소스 코드에서 찾을 수 없습니다.';
         }
 
         if (analysisMode === 'dependency') {
-            // 대상 함수 이름이 입력되었는지 먼저 확인합니다.
-            if (!targetFunction || targetFunction.trim() === '') {
-                return '분석할 대상 함수의 이름을 입력해주세요.';
-            }
-
+            if (!targetFunction || targetFunction.trim() === '') return '분석할 대상 함수의 이름을 입력해주세요.';
             const findings = runDependencyAnalysis(content, targetFunction);
+            if (!findings) return 'AST 분석 중 오류가 발생했습니다.';
 
-            // 분석 라이브러리에서 에러(null)를 반환했는지 확인합니다.
-            if (!findings) {
-                return 'AST 분석 중 오류가 발생했습니다. 개발자 콘솔을 확인해주세요.';
-            }
-
-            // 분석은 성공했지만, 타겟 함수를 찾았는지 확인합니다.
             if (findings.target) {
+                const newGraphData = createDependencyGraphData(targetFunction, findings.dependencies);
+                setGraphData(newGraphData);
+
                 let report = `### 🎯 타겟 함수: \`${targetFunction}\`\n\`\`\`javascript\n${findings.target}\n\`\`\`\n`;
                 if (findings.dependencies.length > 0) {
                     report += `\n#### 📞 호출하는 함수 목록\n`;
@@ -185,21 +170,99 @@ const SourceExtractor = () => {
                 }
                 return report;
             } else {
-                // 타겟 함수를 찾지 못했다는 구체적인 메시지를 반환합니다.
-                return `대상 함수 \`${targetFunction}\`을(를) 소스 코드에서 찾을 수 없습니다. 함수 이름을 다시 확인해주세요.`;
+                return `대상 함수 \`${targetFunction}\`(을)를 찾을 수 없습니다.`;
             }
         }
-        setStatusMessage('');
-        // 위의 두 경우에 해당하지 않을 때 기본 메시지를 반환합니다.
         return '분석 결과를 찾지 못했습니다.';
     };
 
-    // 파일 저장 핸들러 (기존과 동일, 웹/Electron 모두에서 작동)
+    // [수정] 키워드 그래프 생성 로직을 '키워드 중심'으로 변경
+    const createKeywordGraphData = (findings: { functionName: string, foundKeywords: string[] }[], keywords: string[]): GraphData => {
+        const nodes: Node[] = [];
+        const edges: Edge[] = [];
+
+        // 1. 검색한 키워드들을 그룹 노드처럼 추가합니다.
+        keywords.forEach((keyword, index) => {
+            nodes.push({
+                id: `keyword-${keyword}`,
+                data: { label: keyword },
+                position: { x: index * 200, y: 0 }, // 최상단에 키워드 노드 배치
+                type: 'input', // 키워드 노드를 시작점으로 표시
+                style: { backgroundColor: '#FFFBE6', borderColor: '#FFC107', width: 'auto', minWidth: 120, textAlign: 'center' }
+            });
+        });
+
+        // 2. 키워드가 발견된 함수들을 아래쪽에 추가합니다. (중복 없이)
+        const functionNodes = new Map<string, Node>();
+        findings.forEach((finding) => {
+            if (!functionNodes.has(finding.functionName)) {
+                functionNodes.set(finding.functionName, {
+                    id: finding.functionName,
+                    data: { label: finding.functionName },
+                    position: { x: 0, y: 0 }, // 위치는 나중에 자동 배치됩니다.
+                    style: { width: 'auto', minWidth: 150 }
+                });
+            }
+        });
+
+        // Map을 배열로 변환하여 노드 목록에 추가하고 위치를 지정합니다.
+        let funcNodeIndex = 0;
+        functionNodes.forEach(node => {
+            node.position = { x: funcNodeIndex * 200, y: 150 };
+            nodes.push(node);
+            funcNodeIndex++;
+        });
+
+        // 3. '키워드' -> '함수'로 관계를 연결합니다.
+        findings.forEach((finding) => {
+            finding.foundKeywords.forEach(keyword => {
+                edges.push({
+                    id: `e-keyword-${keyword}-${finding.functionName}`,
+                    source: `keyword-${keyword}`,
+                    target: finding.functionName,
+                });
+            });
+        });
+
+        return { nodes, edges };
+    };
+
+    // [수정] 자동 레이아웃을 위해 수동 위치 지정을 제거
+    const createDependencyGraphData = (target: string, dependencies: { name: string }[]): GraphData => {
+        const nodes: Node[] = [];
+        const edges: Edge[] = [];
+
+        // React Flow가 자동으로 위치를 계산하도록 position 속성을 제거합니다.
+        nodes.push({
+            id: target,
+            data: { label: target },
+            position: { x: 0, y: 0 }, // 자동 레이아웃을 위해 초기 위치는 중요하지 않습니다.
+            type: 'input',
+            style: { backgroundColor: '#DFF4FF', borderColor: '#4A90E2', width: 'auto', minWidth: 150 }
+        });
+
+        dependencies.forEach((dep) => {
+            if (!nodes.some(node => node.id === dep.name)) {
+                nodes.push({
+                    id: dep.name,
+                    data: { label: dep.name },
+                    position: { x: 0, y: 0 },
+                    style: { width: 'auto', minWidth: 150 }
+                });
+            }
+            edges.push({
+                id: `e-${target}-${dep.name}`,
+                source: target,
+                target: dep.name,
+                animated: true
+            });
+        });
+        return { nodes, edges };
+    };
+
+
     const handleSaveToFile = () => {
-        if (!extractionResult) {
-            alert('저장할 결과가 없습니다.');
-            return;
-        }
+        if (!extractionResult) { alert('저장할 결과가 없습니다.'); return; }
         const blob = new Blob([extractionResult], { type: 'text/markdown' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -211,7 +274,6 @@ const SourceExtractor = () => {
         URL.revokeObjectURL(url);
     };
 
-    // --- JSX 렌더링 (기존과 동일) ---
     return (
         <Section title="1. 소스 코드 추출기">
             <AnalysisForm
@@ -228,6 +290,9 @@ const SourceExtractor = () => {
                 onFileChange={handleFileChange}
                 isElectron={isElectron}
             />
+            {graphData.nodes.length > 0 && (
+                <DependencyGraph nodes={graphData.nodes} edges={graphData.edges} />
+            )}
             <ResultDisplay
                 isLoading={isLoading}
                 statusMessage={statusMessage}
@@ -239,3 +304,4 @@ const SourceExtractor = () => {
 };
 
 export default SourceExtractor;
+
