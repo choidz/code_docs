@@ -308,3 +308,95 @@
   cursor: pointer;
   font-size: 15px;
 }
+
+/* 라디오 버튼 그룹 스타일 */
+.radio-group {
+  display: flex;
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #444;
+  margin-top: 10px;
+}
+
+/* 실제 라디오 버튼은 화면에서 숨깁니다. */
+.radio-group input[type="radio"] {
+  display: none;
+}
+
+/* 라디오 버튼의 라벨을 버튼처럼 꾸밉니다. */
+.radio-group label {
+  flex: 1; /* 양쪽 버튼이 공간을 똑같이 차지하도록 설정 */
+  padding: 10px 15px;
+  text-align: center;
+  background-color: #282c34;
+  color: #aab;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  font-weight: 500;
+  user-select: none; /* 텍스트 선택 방지 */
+}
+
+/* 버튼 사이에 구분선을 추가합니다. */
+.radio-group label:not(:last-child) {
+  border-right: 1px solid #444;
+}
+
+/* 마우스를 올렸을 때의 스타일 */
+.radio-group label:hover {
+  background-color: #3a3f4a;
+}
+
+/* 선택된 라디오 버튼에 연결된 라벨의 스타일 */
+.radio-group input[type="radio"]:checked + label {
+  background-color: #61dafb;
+  color: #20232a;
+  font-weight: bold;
+}
+
+.file-input-label {
+  display: block;
+  width: 100%;
+  max-width: 700px;
+  padding: 20px 0;
+  border: 2px dashed #444;
+  border-radius: 8px;
+  text-align: center;
+  color: #aab;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.file-input-label:hover {
+  background-color: #3a3f4a;
+  border-color: #61dafb;
+}
+
+
+.radio-group label.disabled {
+  color: #666;
+  cursor: not-allowed;
+  background-color: #222;
+  position: relative;
+  overflow: hidden;
+}
+
+.radio-group label.disabled:hover {
+  background-color: #222; /* 호버 효과 방지 */
+}
+
+/* 비활성화된 버튼 위에 마우스를 올렸을 때 툴팁처럼 보이도록 처리 */
+.radio-group label.disabled:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 110%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #111;
+    color: #eee;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 10;
+}
