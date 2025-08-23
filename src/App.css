@@ -1,3 +1,6 @@
+/* ==========================================================
+   공통 레이아웃 및 헤더 스타일
+   ========================================================== */
 .App {
   text-align: center;
 }
@@ -9,36 +12,43 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  /* 콘텐츠를 위에서부터 정렬 */
-  font-size: calc(10px + 2vmin);
+  font-size: calc(3px + 2vmin);
   color: white;
   padding: 40px 20px;
-  /* 위쪽 패딩을 늘려 여유 공간 확보 */
   box-sizing: border-box;
 }
 
 .App-header h1 {
-  margin-top: 0;
-  margin-bottom: 10px;
+  margin: 0 0 10px 0;
+}
+
+.App-header h2 {
+  margin: 10px 0;
+  font-size: calc(3px + 2vmin);
 }
 
 .App-header p {
   color: #aaa;
-  margin-top: 0;
-  margin-bottom: 40px;
+  margin: 0 0 30px 0;
+  font-size: calc(10px + 1vmin);
 }
 
-/* 입력 폼 (다크 테마에 맞게 조정) */
-.input-form {
+/* ==========================================================
+   입력 폼
+   ========================================================== */
+.input-form,
+.extracted-item {
   width: 100%;
   max-width: 700px;
   background-color: #20232a;
-  /* 헤더보다 약간 밝은 색 */
-  padding: 20px;
-  border-radius: 8px;
   border: 1px solid #444;
-  margin-bottom: 40px;
+  border-radius: 8px;
+  padding: 20px;
   text-align: left;
+}
+
+.input-form {
+  margin-bottom: 40px;
 }
 
 .form-field {
@@ -54,73 +64,110 @@
 }
 
 .form-field input,
-.form-field textarea {
+.form-field textarea,
+.language-select,
+.description-input {
   width: 100%;
   padding: 10px;
   border-radius: 4px;
   border: 1px solid #555;
   background-color: #282c34;
   color: #ddd;
-  font-family: "Fira Code", "Consolas", monospace;
-  font-size: 14px;
   box-sizing: border-box;
+  font-size: 14px;
 }
 
-.add-button {
+.form-field input,
+.form-field textarea {
+  font-family: "Fira Code", "Consolas", monospace;
+}
+
+.description-input {
+  margin-top: 15px;
+  font-family: sans-serif;
+  font-size: 15px;
+}
+
+/* ==========================================================
+   버튼 스타일
+   ========================================================== */
+.add-button,
+.add-to-docs-button,
+.ai-button,
+.preset-save-group button,
+.delete-button {
   width: 100%;
-  padding: 12px;
-  font-size: 16px;
+  padding: 10px;
+  font-size: 15px;
   font-weight: bold;
-  color: white;
-  background-color: #61dafb;
-  /* 리액트 블루 색상으로 변경 */
-  color: #20232a;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: background-color 0.2s, opacity 0.2s;
   margin-top: 10px;
 }
 
+.add-button {
+  background-color: #61dafb;
+  color: #20232a;
+}
 .add-button:hover {
   background-color: #88eaff;
 }
 
-/* 결과물 영역 */
-.output-section {
-  width: 100%;
-  max-width: 700px;
-  text-align: left;
+.add-to-docs-button {
+  background-color: #2ea44f;
+  color: white;
+  margin-top: 15px;
+}
+.add-to-docs-button:hover {
+  background-color: #2c974b;
 }
 
-.output-section h2 {
-  font-size: 24px;
-  margin-bottom: 20px;
-  border-bottom: 1px solid #444;
-  padding-bottom: 10px;
+.ai-button {
+  background: linear-gradient(45deg, #4f39fa, #da47a3);
+  color: white;
+}
+.ai-button:hover {
+  opacity: 0.9;
 }
 
-.language-select {
-  width: 100%;
-  padding: 10px;
-  border-radius: 4px;
+.preset-save-group button {
+  width: auto;
+  background-color: #3a3f4a;
   border: 1px solid #555;
-  background-color: #282c34;
-  color: #ddd;
-  font-family: inherit;
-  /* 부모 폰트를 상속받도록 설정 */
+  color: #eee;
   font-size: 14px;
-  box-sizing: border-box;
-  cursor: pointer;
+}
+.preset-save-group button:hover {
+  background-color: #4a4f5a;
 }
 
+.delete-button {
+  width: auto;
+  background-color: #a00115;
+  color: white;
+  font-size: 14px;
+}
+.delete-button:hover {
+  background-color: #d0021b;
+}
+.delete-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ==========================================================
+   출력 및 리스트 영역
+   ========================================================== */
+.output-section,
 .extracted-list {
   width: 100%;
   max-width: 700px;
-  margin-bottom: 40px;
   text-align: left;
 }
 
+.output-section h2,
 .extracted-list h2 {
   font-size: 24px;
   margin-bottom: 20px;
@@ -129,46 +176,12 @@
 }
 
 .extracted-item {
-  background-color: #20232a;
-  border: 1px solid #444;
-  border-radius: 8px;
-  padding: 15px;
   margin-bottom: 20px;
 }
 
-.description-input {
-  width: 100%;
-  box-sizing: border-box;
-  margin-top: 15px;
-  padding: 10px;
-  border-radius: 4px;
-  border: 1px solid #555;
-  background-color: #282c34;
-  color: #ddd;
-  font-family: sans-serif;
-  /* 설명은 일반 폰트로 */
-  font-size: 15px;
-}
-
-.add-to-docs-button {
-  width: 100%;
-  padding: 10px;
-  font-size: 15px;
-  font-weight: bold;
-  color: white;
-  background-color: #2ea44f;
-  /* GitHub 스타일의 녹색 버튼 */
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  margin-top: 15px;
-}
-
-.add-to-docs-button:hover {
-  background-color: #2c974b;
-}
-
+/* ==========================================================
+   탭 & 구분선
+   ========================================================== */
 .tab-container {
   display: flex;
   margin-bottom: 20px;
@@ -203,34 +216,17 @@
   margin: 20px 0;
 }
 
-
+/* ==========================================================
+   코드 프리뷰 & AI 결과
+   ========================================================== */
 .code-preview {
   background-color: #282c34;
   border-radius: 4px;
   padding: 10px;
   color: #ddd;
-  font-family: 'Fira Code', 'Consolas', monospace;
+  font-family: "Fira Code", "Consolas", monospace;
   white-space: pre-wrap;
-  /* 코드가 길어지면 자동 줄바꿈 */
   word-wrap: break-word;
-}
-
-.ai-button {
-  width: 100%;
-  padding: 10px;
-  font-size: 15px;
-  font-weight: bold;
-  color: white;
-  background: linear-gradient(45deg, #4f39fa, #da47a3);
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: opacity 0.2s;
-  margin-top: 10px;
-}
-
-.ai-button:hover {
-  opacity: 0.9;
 }
 
 .ai-result {
@@ -250,11 +246,13 @@
   font-style: italic;
 }
 
+/* ==========================================================
+   토글 스위치
+   ========================================================== */
 .ai-toggle-container {
   display: flex;
   align-items: center;
   height: 34px;
-  /* 버튼 높이와 맞추기 위함 */
 }
 
 .toggle-switch {
@@ -279,7 +277,7 @@
   bottom: 0;
   background-color: #444;
   border-radius: 28px;
-  transition: .4s;
+  transition: 0.4s;
 }
 
 .toggle-switch .slider:before {
@@ -291,15 +289,14 @@
   bottom: 4px;
   background-color: white;
   border-radius: 50%;
-  transition: .4s;
+  transition: 0.4s;
 }
 
-.toggle-switch input:checked+.slider {
+.toggle-switch input:checked + .slider {
   background-color: #61dafb;
-  /* React Blue */
 }
 
-.toggle-switch input:checked+.slider:before {
+.toggle-switch input:checked + .slider:before {
   transform: translateX(22px);
 }
 
@@ -309,7 +306,9 @@
   font-size: 15px;
 }
 
-/* 라디오 버튼 그룹 스타일 */
+/* ==========================================================
+   라디오 그룹
+   ========================================================== */
 .radio-group {
   display: flex;
   width: 100%;
@@ -319,14 +318,12 @@
   margin-top: 10px;
 }
 
-/* 실제 라디오 버튼은 화면에서 숨깁니다. */
 .radio-group input[type="radio"] {
   display: none;
 }
 
-/* 라디오 버튼의 라벨을 버튼처럼 꾸밉니다. */
 .radio-group label {
-  flex: 1; /* 양쪽 버튼이 공간을 똑같이 차지하도록 설정 */
+  flex: 1;
   padding: 10px 15px;
   text-align: center;
   background-color: #282c34;
@@ -334,26 +331,53 @@
   cursor: pointer;
   transition: background-color 0.2s ease, color 0.2s ease;
   font-weight: 500;
-  user-select: none; /* 텍스트 선택 방지 */
+  user-select: none;
 }
 
-/* 버튼 사이에 구분선을 추가합니다. */
 .radio-group label:not(:last-child) {
   border-right: 1px solid #444;
 }
 
-/* 마우스를 올렸을 때의 스타일 */
 .radio-group label:hover {
   background-color: #3a3f4a;
 }
 
-/* 선택된 라디오 버튼에 연결된 라벨의 스타일 */
 .radio-group input[type="radio"]:checked + label {
   background-color: #61dafb;
   color: #20232a;
   font-weight: bold;
 }
 
+.radio-group label.disabled {
+  color: #666;
+  cursor: not-allowed;
+  background-color: #222;
+  position: relative;
+  overflow: hidden;
+}
+
+.radio-group label.disabled:hover {
+  background-color: #222;
+}
+
+.radio-group label.disabled:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 110%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #111;
+  color: #eee;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  z-index: 10;
+}
+
+/* ==========================================================
+   파일 업로드 영역
+   ========================================================== */
 .file-input-label {
   display: block;
   width: 100%;
@@ -372,31 +396,99 @@
   border-color: #61dafb;
 }
 
+/* ==========================================================
+   프리셋 관리 섹션
+   ========================================================== */
+.preset-controls {
+  background: linear-gradient(135deg, #20232a, #181a20);
+  padding: 16px;
+  border-radius: 10px;
+  border: 1px solid #333;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  margin-top: 10px;
+}
 
-.radio-group label.disabled {
-  color: #666;
+.preset-select-group,
+.preset-save-group {
+  display: flex;
+  gap: 8px;
+}
+
+.preset-select-group {
+  margin-bottom: 12px;
+}
+
+.preset-select-group select,
+.preset-save-group input {
+  flex-grow: 1;
+}
+
+/* 드롭다운 */
+.preset-dropdown,
+.preset-input {
+  flex-grow: 1;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #444;
+  background-color: #282c34;
+  color: #ddd;
+  font-size: 14px;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+/* hover 효과 */
+.preset-dropdown:hover,
+.preset-input:hover {
+  border-color: #61dafb;
+  background-color: #2c313d;
+}
+
+/* 입력창 포커스 효과 */
+.preset-input:focus {
+  outline: none;
+  border-color: #61dafb;
+  box-shadow: 0 0 4px #61dafb88;
+}
+
+.preset-actions {
+  display: flex;
+  justify-content: flex-end; /* 오른쪽 끝으로 */
+  gap: 10px;
+  margin-top: 12px;
+}
+
+/* 버튼 기본 스타일 */
+.preset-btn {
+  padding: 6px 10px;
+  font-size: 14px;
+  font-weight: bold;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+  border: none;
+}
+
+.preset-btn:disabled {
+  opacity: 0.5;
   cursor: not-allowed;
-  background-color: #222;
-  position: relative;
-  overflow: hidden;
 }
 
-.radio-group label.disabled:hover {
-  background-color: #222; /* 호버 효과 방지 */
+/* 저장 버튼 - React Blue */
+.preset-btn.save {
+  background-color: #61dafb;
+  color: #20232a;
+}
+.preset-btn.save:hover {
+  background-color: #88eaff;
+  transform: translateY(-1px);
 }
 
-/* 비활성화된 버튼 위에 마우스를 올렸을 때 툴팁처럼 보이도록 처리 */
-.radio-group label.disabled:hover::after {
-    content: attr(title);
-    position: absolute;
-    bottom: 110%;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: #111;
-    color: #eee;
-    padding: 5px 10px;
-    border-radius: 4px;
-    font-size: 12px;
-    white-space: nowrap;
-    z-index: 10;
+/* 삭제 버튼 - 오렌지 톤 */
+.preset-btn.delete {
+  background-color: #ff7043;
+  color: white;
+}
+.preset-btn.delete:hover {
+  background-color: #ff5722;
+  transform: translateY(-1px);
 }
