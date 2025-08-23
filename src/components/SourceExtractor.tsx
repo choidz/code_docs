@@ -1,11 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import type { Node, Edge } from 'reactflow';
-import Section from './ui/Section';
-import AnalysisForm from './ui/AnalysisForm';
-import ResultDisplay from './ui/ResultDisplay';
-import DependencyGraph from './ui/DependencyGraph';
+import React, { useEffect, useState } from 'react';
+
+
 import JSZip from 'jszip';
-import { runAdvancedKeywordAnalysis, runDependencyAnalysis, parseKeywords } from '../lib/analysis';
+import type { Edge, Node } from 'reactflow';
+import { parseKeywords, runAdvancedKeywordAnalysis, runDependencyAnalysis } from '../lib/analysis';
+import AnalysisForm from './ui/AnalysisForm';
+import DependencyGraph from './ui/DependencyGraph';
+import ResultDisplay from './ui/ResultDisplay';
+import Section from './ui/Section';
+
+// ==========================================================
+// ▼▼▼ [추가] 1단계에서 만든 헬퍼 파일들을 import 합니다. ▼▼▼
+// ==========================================================
+import { loadPresets, savePresets } from '../lib/presetManager';
+import type { AnalysisPreset } from '../types';
 
 const isElectron = !!window.electronAPI;
 
@@ -32,9 +40,21 @@ const SourceExtractor = () => {
     const [selectedFileObject, setSelectedFileObject] = useState<File | null>(null);
     const [graphData, setGraphData] = useState<GraphData>({ nodes: [], edges: [] });
 
+    // ==========================================================
+    // ▼▼▼ [추가] 프리셋 관리를 위한 상태 변수 3개를 추가합니다. ▼▼▼
+    // ==========================================================
+    const [presets, setPresets] = useState<AnalysisPreset[]>([]);
+    const [selectedPreset, setSelectedPreset] = useState<string>('');
+    const [newPresetName, setNewPresetName] = useState<string>('');
+
     useEffect(() => {
         const electronCheck = !!window.electronAPI;
         setIsElectron(electronCheck);
+
+         // ==========================================================
+        // ▼▼▼ [추가] 컴포넌트가 처음 로드될 때 localStorage에서 프리셋을 불러옵니다. ▼▼▼
+        // ==========================================================
+        setPresets(loadPresets());
         if (electronCheck) {
             window.electronAPI.onAnalysisResult((result) => {
                 setExtractionResult(result);
@@ -103,6 +123,64 @@ const SourceExtractor = () => {
             } finally {
                 setIsLoading(false);
             }
+        }
+    };
+
+     // ==========================================================
+    // ▼▼▼ [추가] 프리셋을 다루는 핸들러 함수 3개를 추가합니다. (기존 함수들 아래에) ▼▼▼
+    // ==========================================================
+    const handlePresetChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const presetName = e.target.value;
+        setSelectedPreset(presetName);
+
+        const preset = presets.find(p => p.name === presetName);
+        if (preset) {
+            setAnalysisMode(preset.mode);
+            setKeywords(preset.keywords);
+            setTargetFunction(preset.targetFunction);
+            setShouldExtractBlocks(preset.shouldExtractBlocks);
+        }
+    };
+
+    const handleSavePreset = () => {
+        if (!newPresetName.trim()) {
+            alert('프리셋 이름을 입력해주세요.');
+            return;
+        }
+        const trimmedName = newPresetName.trim();
+        if (presets.some(p => p.name === trimmedName)) {
+            alert('이미 사용 중인 이름입니다.');
+            return;
+        }
+
+        const newPreset: AnalysisPreset = {
+            name: trimmedName,
+            mode: analysisMode,
+            keywords: keywords,
+            targetFunction: targetFunction,
+            shouldExtractBlocks: shouldExtractBlocks,
+        };
+
+        const updatedPresets = [...presets, newPreset].sort((a, b) => a.name.localeCompare(b.name));
+        setPresets(updatedPresets);
+        savePresets(updatedPresets);
+
+        setNewPresetName('');
+        setSelectedPreset(trimmedName);
+        alert(`'${trimmedName}' 프리셋이 저장되었습니다!`);
+    };
+
+    const handleDeletePreset = () => {
+        if (!selectedPreset) {
+            alert('삭제할 프리셋을 선택해주세요.');
+            return;
+        }
+
+        if (window.confirm(`'${selectedPreset}' 프리셋을 정말 삭제하시겠습니까?`)) {
+            const updatedPresets = presets.filter(p => p.name !== selectedPreset);
+            setPresets(updatedPresets);
+            savePresets(updatedPresets);
+            setSelectedPreset('');
         }
     };
 
@@ -289,6 +367,17 @@ const SourceExtractor = () => {
                 onRunAnalysis={handleRunAnalysis}
                 onFileChange={handleFileChange}
                 isElectron={isElectron}
+
+                // =================================================================
+                // ▼▼▼ [추가] AnalysisForm에 프리셋 관련 props 7개를 전달합니다. ▼▼▼
+                // =================================================================
+                presets={presets}
+                selectedPreset={selectedPreset}
+                newPresetName={newPresetName}
+                onPresetChange={handlePresetChange}
+                onNewPresetNameChange={(e) => setNewPresetName(e.target.value)}
+                onSavePreset={handleSavePreset}
+                onDeletePreset={handleDeletePreset}
             />
             {graphData.nodes.length > 0 && (
                 <DependencyGraph nodes={graphData.nodes} edges={graphData.edges} />

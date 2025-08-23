@@ -1,5 +1,7 @@
 import React from 'react';
+import type { AnalysisPreset } from '../../types'; // 프리셋 타입을 사용하기 위해 import 합니다.
 import FormField from './FormField';
+
 
 // 부모로부터 받을 모든 props를 정의합니다.
 interface AnalysisFormProps {
@@ -27,12 +29,22 @@ interface AnalysisFormProps {
     onFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
 
     isElectron: boolean;
+
+
+    // --- 프리셋 관련 props ---
+    presets: AnalysisPreset[];
+    selectedPreset: string;
+    newPresetName: string;
+    onPresetChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+    onNewPresetNameChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onSavePreset: () => void;
+    onDeletePreset: () => void;
 }
 
 const AnalysisForm: React.FC<AnalysisFormProps> = (props) => {
     return (
         <>
-            <FormField label="1. 분석 종류 선택">
+            <FormField label="🔍 분석 종류 선택">
                 <select value={props.analysisMode} onChange={e => props.setAnalysisMode(e.target.value as any)} className="language-select">
                     <option value="keyword">🔑 키워드 검색</option>
                     <option value="dependency">🔗 의존성 분석 (JS/TS)</option>
@@ -41,7 +53,10 @@ const AnalysisForm: React.FC<AnalysisFormProps> = (props) => {
 
             {props.analysisMode === 'keyword' && (
                 <>
-                    <FormField label="추출할 키워드" description="찾고 싶은 키워드를 콤마(,)로 구분하여 입력하세요.">
+                    {/* <FormField label="추출할 키워드" description="찾고 싶은 키워드를 콤마(,)로 구분하여 입력하세요.">
+                        <textarea value={props.keywords} onChange={(e) => props.setKeywords(e.target.value)} rows={3} />
+                    </FormField> */}
+                    <FormField label="추출할 키워드" description={`찾고 싶은 키워드를 콤마(,)로 구분하여 입력하세요. (${props.keywords.split(',').filter(k => k.trim()).length}개 입력됨)`}>
                         <textarea value={props.keywords} onChange={(e) => props.setKeywords(e.target.value)} rows={3} />
                     </FormField>
                     <FormField label="분석 옵션">
@@ -64,7 +79,7 @@ const AnalysisForm: React.FC<AnalysisFormProps> = (props) => {
 
             <div className="or-divider"></div>
 
-            <FormField label="2. 소스 위치 선택">
+            <FormField label="📂 소스 위치 선택">
                 <div className="radio-group">
                     <label>
                         <input type="radio" value="paste" checked={props.sourceMethod === 'paste'} onChange={(e) => props.setSourceMethod(e.target.value as any)} />
@@ -104,6 +119,51 @@ const AnalysisForm: React.FC<AnalysisFormProps> = (props) => {
             )}
 
             <div className="or-divider"></div>
+
+            <FormField label="🏷️ 분석 프리셋 (선택 사항)">
+  <div className="preset-controls">
+    {/* 프리셋 선택 */}
+    <div className="preset-select-group">
+      <select
+        value={props.selectedPreset}
+        onChange={props.onPresetChange}
+        className="preset-dropdown"
+      >
+        <option value="">저장된 프리셋 불러오기</option>
+        {props.presets.map((p) => (
+          <option key={p.name} value={p.name}>
+            {p.name}
+          </option>
+        ))}
+      </select>
+    </div>
+
+    {/* 새 프리셋 이름 입력 */}
+    <div className="preset-save-group">
+      <input
+        type="text"
+        className="preset-input"
+        placeholder="새 프리셋 이름 입력"
+        value={props.newPresetName}
+        onChange={props.onNewPresetNameChange}
+      />
+    </div>
+
+    {/* 버튼들을 하단에 따로 배치 */}
+    <div className="preset-actions">
+      <button
+        onClick={props.onDeletePreset}
+        disabled={!props.selectedPreset}
+        className="preset-btn delete"
+      >
+        삭제
+      </button>
+      <button onClick={props.onSavePreset} className="preset-btn save">
+        저장
+      </button>
+    </div>
+  </div>
+</FormField>
 
             {/* '파일/ZIP 업로드' 모드가 아닐 때만 버튼이 보입니다. */}
             {/* {props.sourceMethod !== 'upload' && ( */}
