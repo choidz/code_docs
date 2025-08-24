@@ -492,3 +492,95 @@
   background-color: #ff5722;
   transform: translateY(-1px);
 }
+
+/* ==========================================================
+   [추가] 인터랙티브 결과 표시 UI 스타일
+   ========================================================== */
+.result-container {
+  border: 1px solid #444;
+  border-radius: 8px;
+  margin-top: 15px;
+  background-color: #282c34;
+}
+
+.result-header {
+  padding: 10px 15px;
+  border-bottom: 1px solid #444;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.save-markdown-button {
+  background-color: #3a3f4a;
+  color: #eee;
+  border: 1px solid #555;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.save-markdown-button:hover {
+  background-color: #4a4f5a;
+}
+
+.result-body {
+  padding: 15px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+/* 일반 텍스트 블록 스타일 */
+.text-block {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  color: #ccc;
+  font-family: sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* 코드 블록 컨테이너 */
+.code-block-container {
+  position: relative;
+  margin: 15px 0;
+}
+
+/* 코드 블록 내부 pre, code 태그 */
+.code-block-container pre {
+  margin: 0;
+  border-radius: 6px;
+  /* highlight.js 테마(atom-one-dark)와 유사한 배경 */
+  background-color: #282c34;
+}
+.code-block-container pre code.hljs {
+  padding: 15px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* 복사 버튼 */
+.copy-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  padding: 5px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  opacity: 0; /* 평소에는 숨김 */
+  transition: opacity 0.2s, background-color 0.2s;
+}
+
+.code-block-container:hover .copy-button {
+  opacity: 1; /* 마우스를 올리면 나타남 */
+}
+
+.copy-button:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
