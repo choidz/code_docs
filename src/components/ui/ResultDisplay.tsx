@@ -1,7 +1,7 @@
 import React from 'react';
-import FormField from './FormField';
+// react-icons 라이브러리에서 다운로드 아이콘을 가져옵니다.
+import { FiDownload } from 'react-icons/fi';
 
-// 1. 부모로부터 받을 props 타입에 statusMessage 추가
 interface ResultDisplayProps {
     isLoading: boolean;
     statusMessage: string;
@@ -10,25 +10,37 @@ interface ResultDisplayProps {
 }
 
 const ResultDisplay: React.FC<ResultDisplayProps> = ({ isLoading, statusMessage, extractionResult, onSaveToFile }) => {
+    
+    // 로딩 중이 아니고, 결과값도 없으면 아무것도 표시하지 않습니다.
+    if (!isLoading && !extractionResult) {
+        return null;
+    }
+
+    // [수정] 겹치는 헤더(.result-header)를 제거하고 구조를 단순화합니다.
     return (
-        <>
-            {/* 2. 로딩 중일 때 상태 메시지를 표시하는 UI 추가 */}
-            {isLoading && (
-                <div className="status-container">
-                    <p>{statusMessage || '분석을 준비 중입니다...'}</p>
+        <div className="result-display-wrapper">
+            {/* 실제 결과가 표시되는 내용 부분 */}
+            <div className="result-content">
+                {/* 로딩 중일 때 상태 메시지를 표시합니다. */}
+                {isLoading && (
+                    <p className="status-message">{statusMessage || '분석을 준비 중입니다...'}</p>
+                )}
+                {/* 로딩이 아니고 결과가 있을 때, 결과를 <pre> 태그로 감싸서 표시합니다. */}
+                {!isLoading && extractionResult && (
+                    <pre>{extractionResult}</pre>
+                )}
+            </div>
+
+            {/* 저장 버튼을 결과 내용 위에 배치합니다. */}
+            {extractionResult && (
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
+                    <button onClick={onSaveToFile} className="btn-save-result">
+                        <FiDownload />
+                        <span>결과 저장 (.md)</span>
+                    </button>
                 </div>
             )}
-
-            {/* 3. 분석 결과가 있을 때만 결과 창을 표시 */}
-            {extractionResult && (
-                <FormField label="분석 결과">
-                    <textarea value={extractionResult} readOnly rows={15} className="description-input" />
-                    <button onClick={onSaveToFile} className="add-button" style={{ marginTop: '10px' }}>
-                        💾 결과 저장하기 (.md)
-                    </button>
-                </FormField>
-            )}
-        </>
+        </div>
     );
 };
 

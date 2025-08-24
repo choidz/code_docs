@@ -15,17 +15,17 @@ const DependencyGraph: React.FC<DependencyGraphProps> = ({ nodes, edges }) => {
     }
 
     return (
-        <div style={{ height: '400px', border: '1px solid #ddd', borderRadius: '8px', marginTop: '20px' }}>
-            <ReactFlow
-                nodes={nodes}
-                edges={edges}
-                fitView // 그래프를 뷰에 맞게 자동으로 조절합니다.
-            >
-                <Background />
-                <Controls />
-            </ReactFlow>
-        </div>
-    );
+    <div style={{ height: '100%', width: '100%' }}>
+        <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            fitView
+        >
+            <Background />
+            <Controls />
+        </ReactFlow>
+    </div>
+);
 };
 
 export default DependencyGraph;

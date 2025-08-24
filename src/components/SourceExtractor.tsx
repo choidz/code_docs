@@ -353,42 +353,59 @@ const SourceExtractor = () => {
     };
 
     return (
-        <Section title="1. 소스 코드 추출기">
-            <AnalysisForm
-                analysisMode={analysisMode} setAnalysisMode={setAnalysisMode}
-                keywords={keywords} setKeywords={setKeywords}
-                shouldExtractBlocks={shouldExtractBlocks} setShouldExtractBlocks={setShouldExtractBlocks}
-                targetFunction={targetFunction} setTargetFunction={setTargetFunction}
-                sourceMethod={sourceMethod} setSourceMethod={setSourceMethod}
-                pastedCode={pastedCode} setPastedCode={setPastedCode}
-                folderPath={folderPath} setFolderPath={setFolderPath}
-                selectedFileName={selectedFileName}
-                isLoading={isLoading}
-                onRunAnalysis={handleRunAnalysis}
-                onFileChange={handleFileChange}
-                isElectron={isElectron}
+                <div className="single-column-layout">
 
-                // =================================================================
-                // ▼▼▼ [추가] AnalysisForm에 프리셋 관련 props 7개를 전달합니다. ▼▼▼
-                // =================================================================
-                presets={presets}
-                selectedPreset={selectedPreset}
-                newPresetName={newPresetName}
-                onPresetChange={handlePresetChange}
-                onNewPresetNameChange={(e) => setNewPresetName(e.target.value)}
-                onSavePreset={handleSavePreset}
-                onDeletePreset={handleDeletePreset}
-            />
-            {graphData.nodes.length > 0 && (
+                                <Section title="소스추출기">
+                    <AnalysisForm
+                        analysisMode={analysisMode}
+                        setAnalysisMode={setAnalysisMode}
+                        keywords={keywords}
+                        setKeywords={setKeywords}
+                        targetFunction={targetFunction}
+                        setTargetFunction={setTargetFunction}
+                        sourceMethod={sourceMethod}
+                        setSourceMethod={setSourceMethod}
+                        pastedCode={pastedCode}
+                        setPastedCode={setPastedCode}
+                        folderPath={folderPath}
+                        setFolderPath={setFolderPath}
+                        selectedFileName={selectedFileName}
+                        isLoading={isLoading}
+                        onRunAnalysis={handleRunAnalysis}
+                        onFileChange={handleFileChange}
+                        isElectron={isElectron}
+                        presets={presets}
+                        selectedPreset={selectedPreset}
+                        newPresetName={newPresetName}
+                        onPresetChange={handlePresetChange}
+                        onNewPresetNameChange={(e) => setNewPresetName(e.target.value)}
+                        onSavePreset={handleSavePreset}
+                        onDeletePreset={handleDeletePreset}
+                    />
+                </Section>
+
+           {(isLoading || extractionResult) && (
+             <Section title="분석 결과">
+    {/* [추가] 그래프와 결과를 감싸는 전체 컨테이너 */}
+    <div className="result-section-content">
+        {/* 그래프를 표시하는 영역 */}
+        {graphData.nodes.length > 0 && (
+            <div className="graph-container">
                 <DependencyGraph nodes={graphData.nodes} edges={graphData.edges} />
+            </div>
+        )}
+
+        {/* 텍스트 결과를 표시하는 영역 */}
+        <ResultDisplay
+            isLoading={isLoading}
+            statusMessage={statusMessage}
+            extractionResult={extractionResult}
+            onSaveToFile={handleSaveToFile}
+        />
+    </div>
+</Section>
             )}
-            <ResultDisplay
-                isLoading={isLoading}
-                statusMessage={statusMessage}
-                extractionResult={extractionResult}
-                onSaveToFile={handleSaveToFile}
-            />
-        </Section>
+        </div>
     );
 };
 

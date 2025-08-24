@@ -1,494 +1,427 @@
-/* ==========================================================
-   공통 레이아웃 및 헤더 스타일
-   ========================================================== */
-.App {
-  text-align: center;
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+/* ☀️ 라이트 모드 (기본) */
+:root {
+  --color-accent: #7f56d9; /* Felix의 메인 보라색 */
+  --color-accent-light: #f9f5ff; /* 보라색 계열의 아주 밝은 배경 */
+  --color-bg: #f9fafb;
+  --color-sidebar-bg: #ffffff;
+  --color-content-bg: #ffffff;
+  --color-text-primary: #101828;
+  --color-text-secondary: #667085;
+  --color-text-placeholder: #98a2b3;
+  --color-border: #eaecf0;
+  --color-border-hover: #d0d5dd;
+  --color-success: #039855;
+
+  --font-family: "Inter", sans-serif;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --shadow-xs: 0 1px 2px 0 rgba(16, 24, 40, 0.05);
+  --shadow-sm: 0 1px 3px 0 rgba(16, 24, 40, 0.1),
+    0 1px 2px -1px rgba(16, 24, 40, 0.1);
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+/* 1. 라이트 모드(기본)에서의 테마 토글 버튼 호버 스타일 */
+.theme-toggle:hover {
+  background-color: var(--color-border); /* 연한 보라색 배경 */
+  color: var(--color-accent); /* 보라색 텍스트 */
+}
+
+/* 2. 다크 모드일 때만 적용되는 테마 토글 버튼 호버 스타일 */
+body.dark-mode .theme-toggle:hover {
+  background-color: var(--color-border); /* 사이드바보다 한 톤 밝은 회색 배경 */
+  color: var(--color-text-primary); /* 밝은 텍스트 */
+}
+
+/* 🌙 다크 모드 */
+body.dark-mode {
+  --color-accent: #9b78f0;
+  --color-accent-light: rgba(155, 120, 240, 0.1);
+  --color-bg: #101828;
+  --color-sidebar-bg: #1d2939;
+  --color-content-bg: #1d2939;
+  --color-text-primary: #f2f4f7;
+  --color-text-secondary: #98a2b3;
+  --color-text-placeholder: #667085;
+  --color-border: #344054;
+  --color-border-hover: #475467;
+  --color-success: #12b76a;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+body {
+  font-family: var(--font-family);
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+}
+
+/* ==========================================================
+   2. 앱 전체 레이아웃 (사이드바 + 메인 콘텐츠)
+   ========================================================== */
+.app-layout {
+  display: flex;
+  height: 100vh;
+}
+.main-content {
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+/* ==========================================================
+   3. 사이드바 UI 업데이트 (Felix 스타일)
+   ========================================================== */
+.sidebar {
+  width: 280px;
+  background-color: var(--color-sidebar-bg);
+  border-right: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  font-size: calc(3px + 2vmin);
+  padding: 24px 16px;
+  transition: background-color 0.2s;
+}
+.sidebar-header {
+  padding: 0 8px;
+  margin-bottom: 24px;
+}
+.sidebar-header h1 {
+  font-size: 1.5rem;
+}
+
+.sidebar-action {
+  padding: 0 8px;
+  margin-bottom: 24px;
+}
+.btn-primary-solid {
+  width: 100%;
+  background-color: var(--color-accent);
   color: white;
-  padding: 40px 20px;
-  box-sizing: border-box;
-}
-
-.App-header h1 {
-  margin: 0 0 10px 0;
-}
-
-.App-header h2 {
-  margin: 10px 0;
-  font-size: calc(3px + 2vmin);
-}
-
-.App-header p {
-  color: #aaa;
-  margin: 0 0 30px 0;
-  font-size: calc(10px + 1vmin);
-}
-
-/* ==========================================================
-   입력 폼
-   ========================================================== */
-.input-form,
-.extracted-item {
-  width: 100%;
-  max-width: 700px;
-  background-color: #20232a;
-  border: 1px solid #444;
-  border-radius: 8px;
-  padding: 20px;
-  text-align: left;
-}
-
-.input-form {
-  margin-bottom: 40px;
-}
-
-.form-field {
-  margin-bottom: 15px;
-}
-
-.form-field label {
-  display: block;
-  margin-bottom: 5px;
-  font-size: 14px;
-  color: #bbb;
-  font-weight: bold;
-}
-
-.form-field input,
-.form-field textarea,
-.language-select,
-.description-input {
-  width: 100%;
-  padding: 10px;
-  border-radius: 4px;
-  border: 1px solid #555;
-  background-color: #282c34;
-  color: #ddd;
-  box-sizing: border-box;
-  font-size: 14px;
-}
-
-.form-field input,
-.form-field textarea {
-  font-family: "Fira Code", "Consolas", monospace;
-}
-
-.description-input {
-  margin-top: 15px;
-  font-family: sans-serif;
-  font-size: 15px;
-}
-
-/* ==========================================================
-   버튼 스타일
-   ========================================================== */
-.add-button,
-.add-to-docs-button,
-.ai-button,
-.preset-save-group button,
-.delete-button {
-  width: 100%;
-  padding: 10px;
-  font-size: 15px;
-  font-weight: bold;
   border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s, opacity 0.2s;
-  margin-top: 10px;
+  font-size: 0.95rem;
+  padding: 12px;
+}
+.btn-primary-solid:hover {
+  background-color: #6941c6;
 }
 
-.add-button {
-  background-color: #61dafb;
-  color: #20232a;
-}
-.add-button:hover {
-  background-color: #88eaff;
-}
-
-.add-to-docs-button {
-  background-color: #2ea44f;
-  color: white;
-  margin-top: 15px;
-}
-.add-to-docs-button:hover {
-  background-color: #2c974b;
+.sidebar-menu-title {
+  padding: 0 16px;
+  margin-bottom: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
 }
 
-.ai-button {
-  background: linear-gradient(45deg, #4f39fa, #da47a3);
-  color: white;
+.sidebar-menu {
+  list-style: none;
 }
-.ai-button:hover {
-  opacity: 0.9;
-}
-
-.preset-save-group button {
-  width: auto;
-  background-color: #3a3f4a;
-  border: 1px solid #555;
-  color: #eee;
-  font-size: 14px;
-}
-.preset-save-group button:hover {
-  background-color: #4a4f5a;
-}
-
-.delete-button {
-  width: auto;
-  background-color: #a00115;
-  color: white;
-  font-size: 14px;
-}
-.delete-button:hover {
-  background-color: #d0021b;
-}
-.delete-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* ==========================================================
-   출력 및 리스트 영역
-   ========================================================== */
-.output-section,
-.extracted-list {
-  width: 100%;
-  max-width: 700px;
-  text-align: left;
-}
-
-.output-section h2,
-.extracted-list h2 {
-  font-size: 24px;
-  margin-bottom: 20px;
-  border-bottom: 1px solid #444;
-  padding-bottom: 10px;
-}
-
-.extracted-item {
-  margin-bottom: 20px;
-}
-
-/* ==========================================================
-   탭 & 구분선
-   ========================================================== */
-.tab-container {
-  display: flex;
-  margin-bottom: 20px;
-  background-color: #20232a;
-  border-radius: 8px;
-  padding: 5px;
-  border: 1px solid #444;
-}
-
-.tab-button {
-  flex: 1;
-  padding: 10px 15px;
-  cursor: pointer;
-  border: none;
-  background-color: transparent;
-  color: #aaa;
-  font-size: 16px;
-  font-weight: bold;
-  transition: all 0.3s ease;
-  border-radius: 6px;
-}
-
-.tab-button.active {
-  background-color: #61dafb;
-  color: #20232a;
-}
-
-.or-divider {
-  text-align: center;
-  font-weight: bold;
-  color: #888;
-  margin: 20px 0;
-}
-
-/* ==========================================================
-   코드 프리뷰 & AI 결과
-   ========================================================== */
-.code-preview {
-  background-color: #282c34;
-  border-radius: 4px;
-  padding: 10px;
-  color: #ddd;
-  font-family: "Fira Code", "Consolas", monospace;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-}
-
-.ai-result {
-  margin-top: 15px;
-  padding: 15px;
-  background-color: rgba(255, 255, 255, 0.05);
-  border-radius: 4px;
-  font-family: sans-serif;
-  font-size: 15px;
-  line-height: 1.6;
-  white-space: pre-wrap;
-}
-
-.ai-result.loading {
-  text-align: center;
-  color: #aaa;
-  font-style: italic;
-}
-
-/* ==========================================================
-   토글 스위치
-   ========================================================== */
-.ai-toggle-container {
+.sidebar-menu li {
   display: flex;
   align-items: center;
-  height: 34px;
-}
-
-.toggle-switch {
-  position: relative;
-  display: inline-block;
-  width: 50px;
-  height: 28px;
-}
-
-.toggle-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.toggle-switch .slider {
-  position: absolute;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #444;
-  border-radius: 28px;
-  transition: 0.4s;
-}
-
-.toggle-switch .slider:before {
-  position: absolute;
-  content: "";
-  height: 20px;
-  width: 20px;
-  left: 4px;
-  bottom: 4px;
-  background-color: white;
-  border-radius: 50%;
-  transition: 0.4s;
-}
-
-.toggle-switch input:checked + .slider {
-  background-color: #61dafb;
-}
-
-.toggle-switch input:checked + .slider:before {
-  transform: translateX(22px);
-}
-
-.toggle-label {
-  margin-left: 12px;
-  cursor: pointer;
-  font-size: 15px;
-}
-
-/* ==========================================================
-   라디오 그룹
-   ========================================================== */
-.radio-group {
-  display: flex;
-  width: 100%;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 1px solid #444;
-  margin-top: 10px;
-}
-
-.radio-group input[type="radio"] {
-  display: none;
-}
-
-.radio-group label {
-  flex: 1;
-  padding: 10px 15px;
-  text-align: center;
-  background-color: #282c34;
-  color: #aab;
-  cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease;
   font-weight: 500;
-  user-select: none;
+  color: var(--color-text-secondary);
+  transition: background-color 0.2s, color 0.2s;
+}
+.sidebar-menu li:hover {
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+}
+.sidebar-menu li.active {
+  background-color: var(--color-accent-light);
+  color: var(--color-accent);
+  font-weight: 600;
+}
+.sidebar-menu li svg {
+  width: 20px;
+  height: 20px;
 }
 
-.radio-group label:not(:last-child) {
-  border-right: 1px solid #444;
-}
-
-.radio-group label:hover {
-  background-color: #3a3f4a;
-}
-
-.radio-group input[type="radio"]:checked + label {
-  background-color: #61dafb;
-  color: #20232a;
-  font-weight: bold;
-}
-
-.radio-group label.disabled {
-  color: #666;
-  cursor: not-allowed;
-  background-color: #222;
-  position: relative;
-  overflow: hidden;
-}
-
-.radio-group label.disabled:hover {
-  background-color: #222;
-}
-
-.radio-group label.disabled:hover::after {
-  content: attr(title);
-  position: absolute;
-  bottom: 110%;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: #111;
-  color: #eee;
-  padding: 5px 10px;
-  border-radius: 4px;
-  font-size: 12px;
-  white-space: nowrap;
-  z-index: 10;
+.sidebar-footer {
+  margin-top: auto;
 }
 
 /* ==========================================================
-   파일 업로드 영역
+   4. 메인 콘텐츠 및 폼 스타일링
    ========================================================== */
-.file-input-label {
-  display: block;
-  width: 100%;
-  max-width: 700px;
-  padding: 20px 0;
-  border: 2px dashed #444;
-  border-radius: 8px;
-  text-align: center;
-  color: #aab;
-  cursor: pointer;
-  transition: background-color 0.2s, border-color 0.2s;
-}
 
-.file-input-label:hover {
-  background-color: #3a3f4a;
-  border-color: #61dafb;
-}
-
-/* ==========================================================
-   프리셋 관리 섹션
-   ========================================================== */
-.preset-controls {
-  background: linear-gradient(135deg, #20232a, #181a20);
-  padding: 16px;
-  border-radius: 10px;
-  border: 1px solid #333;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-  margin-top: 10px;
-}
-
-.preset-select-group,
-.preset-save-group {
+.single-column-layout {
   display: flex;
-  gap: 8px;
+  flex-direction: column;
+  gap: 32px; /* 각 섹션 사이의 간격 */
+  /* [수정] 좌우 padding을 32px에서 48px로 늘려 여백을 확보합니다. */
+  padding: 32px 48px;
+  max-width: 800px;
+  margin: 0 auto; /* 중앙 정렬 */
 }
 
-.preset-select-group {
-  margin-bottom: 12px;
+section,
+.card {
+  background-color: var(--color-content-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
 }
-
-.preset-select-group select,
-.preset-save-group input {
-  flex-grow: 1;
+section > h2 {
+  font-size: 1.25rem;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--color-border);
 }
+.form-content {
+  padding: 24px;
+} /* form-field들을 감싸는 div에 적용 */
 
-/* 드롭다운 */
-.preset-dropdown,
-.preset-input {
-  flex-grow: 1;
-  padding: 10px;
-  border-radius: 6px;
-  border: 1px solid #444;
-  background-color: #282c34;
-  color: #ddd;
-  font-size: 14px;
-  transition: border-color 0.2s, background-color 0.2s;
+/* FormField, input, button 등 */
+.form-field {
+  margin-bottom: 20px;
 }
-
-/* hover 효과 */
-.preset-dropdown:hover,
-.preset-input:hover {
-  border-color: #61dafb;
-  background-color: #2c313d;
+.form-field label {
+  font-weight: 500;
+  font-size: 0.875rem;
+  margin-bottom: 6px;
+  display: block;
 }
-
-/* 입력창 포커스 효과 */
-.preset-input:focus {
+input,
+textarea,
+select {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-content-bg);
+  font-size: 1rem;
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-xs);
+  transition: all 0.2s;
+}
+input:focus,
+textarea:focus,
+select:focus {
   outline: none;
-  border-color: #61dafb;
-  box-shadow: 0 0 4px #61dafb88;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-light);
+}
+textarea {
+  min-height: 150px;
+  resize: vertical;
+}
+
+/* 버튼 */
+.btn {
+  padding: 10px 16px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  border: 1px solid;
+  box-shadow: var(--shadow-xs);
+}
+.btn-secondary {
+  background-color: var(--color-content-bg);
+  border-color: var(--color-border);
+  color: var(--color-text-secondary);
+}
+.btn-secondary:hover {
+  background-color: var(--color-bg);
+}
+
+/* 결과 표시 영역 */
+.graph-container {
+  height: 300px;
+  border-bottom: 1px solid var(--color-border);
+}
+/* ResultDisplay 컴포넌트 내부 스타일링 필요 */
+
+/* ==========================================================
+   5. 세부 컴포넌트 스타일 보강 (Felix 스타일)
+   ========================================================== */
+
+/* 프리셋 컨트롤 영역 */
+.preset-controls {
+  background-color: var(--color-bg);
+  padding: 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .preset-actions {
   display: flex;
-  justify-content: flex-end; /* 오른쪽 끝으로 */
-  gap: 10px;
-  margin-top: 12px;
+  justify-content: flex-end; /* 버튼을 오른쪽으로 정렬 */
+  gap: 8px;
+  margin-top: 8px;
 }
 
-/* 버튼 기본 스타일 */
-.preset-btn {
-  padding: 6px 10px;
-  font-size: 14px;
-  font-weight: bold;
-  border-radius: 6px;
+/* 파일 업로드 영역 */
+.file-input-label {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 32px;
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  color: var(--color-text-secondary);
   cursor: pointer;
-  transition: background-color 0.2s, transform 0.1s;
+  transition: border-color 0.2s, background-color 0.2s;
+}
+
+.file-input-label:hover {
+  border-color: var(--color-accent);
+  background-color: var(--color-accent-light);
+}
+
+.file-input-label::before {
+  /* 아이콘 추가 (SVG 사용) */
+  content: "📁";
+  font-size: 24px;
+}
+
+/* 테마 토글 버튼 */
+.sidebar-footer {
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border);
+}
+
+.theme-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  background-color: transparent;
   border: none;
+  font-size: 1rem;
+  text-align: left;
 }
 
-.preset-btn:disabled {
-  opacity: 0.5;
+.theme-toggle svg {
+  width: 20px;
+  height: 20px;
+}
+
+/* 추가 버튼 스타일 */
+.btn-tertiary {
+  background-color: transparent;
+  border-color: transparent;
+  color: var(--color-text-secondary);
+  box-shadow: none;
+}
+.btn-tertiary:hover {
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+}
+.btn-tertiary:disabled {
+  background-color: transparent;
+  color: var(--color-border);
+}
+
+/* 라디오 버튼 그룹 (세그먼트 컨트롤 스타일) */
+.radio-group {
+  display: flex;
+  width: 100%;
+  background-color: var(--color-bg); /* 컨테이너 배경색 */
+  border-radius: var(--radius-md);
+  padding: 4px; /* 버튼 주위에 약간의 여백 */
+  border: 1px solid var(--color-border);
+}
+
+.radio-group input[type="radio"] {
+  display: none; /* 실제 라디오 버튼은 숨김 */
+}
+
+.radio-group label {
+  flex: 1; /* 모든 라벨이 동일한 너비를 갖도록 함 */
+  padding: 8px 12px;
+  text-align: center;
+  border-radius: 6px; /* 각 버튼의 모서리를 둥글게 */
+  color: var(--color-text-secondary);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  user-select: none;
+}
+
+/* 선택되지 않은 라벨에 마우스를 올렸을 때 */
+.radio-group label:hover {
+  background-color: var(--color-border);
+}
+
+/* 선택된 라벨의 스타일 */
+.radio-group input[type="radio"]:checked + label {
+  background-color: var(--color-content-bg);
+  color: var(--color-text-primary);
+  font-weight: 600;
+  box-shadow: var(--shadow-sm); /* 입체감 부여 */
+}
+
+/* 비활성화된 라벨 스타일 */
+.radio-group label.disabled {
+  color: var(--color-text-placeholder);
   cursor: not-allowed;
+  background-color: transparent;
 }
 
-/* 저장 버튼 - React Blue */
-.preset-btn.save {
-  background-color: #61dafb;
-  color: #20232a;
+.radio-group label.disabled:hover {
+  background-color: transparent;
 }
-.preset-btn.save:hover {
-  background-color: #88eaff;
-  transform: translateY(-1px);
+.result-section-content {
+  padding: 24px; /* 섹션 제목과 내용 사이의 여백 */
 }
 
-/* 삭제 버튼 - 오렌지 톤 */
-.preset-btn.delete {
-  background-color: #ff7043;
+.graph-container {
+  height: 400px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  margin-bottom: 24px; /* 그래프와 아래 텍스트 결과 사이의 간격 */
+}
+
+.result-content pre {
+  background-color: var(--color-bg); /* 부모보다 한 톤 어두운 배경 */
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  white-space: pre-wrap; /* 공백은 유지하되, 필요시 자동 줄바꿈 */
+  word-break: break-all; /* 단어 중간이라도 강제로 줄을 바꿔서 넘치지 않게 함 */
+  margin: 0; /* pre 태그가 가질 수 있는 기본 마진 제거 */
+}
+
+/* [추가] '결과 저장' 버튼에 대한 스타일 규칙 */
+.btn-save-result {
+  width: 100%;
   color: white;
+  border: none;
+  font-size: 0.95rem;
+  padding: 12px;
+  background-color: var(--color-accent);
+  box-shadow: var(--shadow-xs);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
 }
-.preset-btn.delete:hover {
-  background-color: #ff5722;
-  transform: translateY(-1px);
+
+.btn-save-result:hover {
+  background-color: #6941c6;
+}
+
+.btn-save-result svg {
+  width: 16px;
+  height: 16px;
 }
