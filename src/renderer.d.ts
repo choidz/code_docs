@@ -1,11 +1,14 @@
-// 1. 우리가 preload.js에서 만든 API의 모양(Shape)을 정의합니다.
 export interface IElectronAPI {
-  runAnalysis: (options: any) => void,
-  onAnalysisResult: (callback: (result: string) => void) => void,
-  onStatusUpdate: (callback: (message: string) => void) => void,
+  runAnalysis: (options: any) => void;
+
+  // ▼▼▼ [수정] 모든 리스너 함수의 반환 타입을 () => void로 변경 ▼▼▼
+  onAnalysisResult: (callback: (result: string) => void) => () => void;
+  onStatusUpdate: (callback: (message: string) => void) => () => void;
+
+  generateHeatmapData: (folderPath: string) => void;
+  onHeatmapDataResult: (callback: (data: any) => void) => () => void;
 }
 
-// 2. 전역(global) window 인터페이스를 확장하여 electronAPI를 추가합니다.
 declare global {
   interface Window {
     electronAPI: IElectronAPI;
