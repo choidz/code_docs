@@ -94,11 +94,10 @@ const SourceExtractor = () => {
         const { results } = findingGroup;
         setGraphData(createKeywordGraphData(results, parseKeywords(keywords)));
         results.forEach((finding: any) => {
-          fullReport += `\n---\n**[함수: ${
-            finding.functionName
-          }] 키워드 \`${finding.foundKeywords.join(
-            ", "
-          )}\` 발견**\n\`\`\`javascript\n${finding.content}\n\`\`\`\n`;
+          fullReport += `\n---\n**[함수: ${finding.functionName
+            }] 키워드 \`${finding.foundKeywords.join(
+              ", "
+            )}\` 발견**\n\`\`\`javascript\n${finding.content}\n\`\`\`\n`;
         });
       }
     });
@@ -147,11 +146,14 @@ const SourceExtractor = () => {
     }
   };
 
+  // [변경] handleRunAnalysis 함수를 아래 내용으로 전체 교체합니다.
   const handleRunAnalysis = async () => {
     setIsLoading(true);
     setExtractionResult("");
     setStatusMessage("");
     setGraphData({ nodes: [], edges: [] });
+
+    // Electron 환경일 경우, 기존처럼 main 프로세스에 분석을 요청합니다.
     if (isElectron) {
       window.electronAPI.runAnalysis({
         analysisType: analysisMode,
@@ -163,59 +165,102 @@ const SourceExtractor = () => {
         folderPath,
         filePath: selectedFilePath,
       });
-    } else {
-      // [수정] 웹 버전도 Electron처럼 최종 결과 '객체'를 만들어 공통 처리 함수에 전달
-      try {
-        if (sourceMethod === "folder") {
-          alert("폴더 분석은 데스크톱 앱에서만 지원됩니다.");
-          setIsLoading(false);
-          return;
+      return; // Electron 요청 후 함수 종료
+    }
+
+    // --- 웹 브라우저 환경을 위한 새로운 통합 분석 로직 ---
+    try {
+      if (sourceMethod === "folder") {
+        alert("폴더 분석은 데스크톱 앱에서만 지원됩니다.");
+        setIsLoading(false);
+        return;
+      }
+
+      // 1. 분석할 소스코드 목록을 준비합니다.
+      const filesToAnalyze: { name: string; content: string }[] = [];
+      setStatusMessage("분석할 파일을 준비 중입니다...");
+
+      if (sourceMethod === "paste") {
+        if (!pastedCode) throw new Error("분석할 소스 코드를 입력해야 합니다.");
+        filesToAnalyze.push({ name: "붙여넣은 코드", content: pastedCode });
+      } else if (sourceMethod === "upload" && selectedFileObject) {
+        if (selectedFileObject.name.toLowerCase().endsWith(".zip")) {
+          const zip = await JSZip.loadAsync(selectedFileObject);
+          for (const zipEntry of Object.values(zip.files)) {
+            if (!zipEntry.dir) {
+              const content = await zipEntry.async("string");
+              filesToAnalyze.push({ name: zipEntry.name, content });
+            }
+          }
+        } else {
+          const content = await selectedFileObject.text();
+          filesToAnalyze.push({ name: selectedFileObject.name, content });
         }
+      }
 
-        const finalResult = {
-          analysisType: analysisMode,
-          target: targetFunction,
-          findings: [] as any[],
-        };
+      if (filesToAnalyze.length === 0) {
+        setExtractionResult("분석할 내용이 없습니다.");
+        setIsLoading(false);
+        return;
+      }
 
-        if (sourceMethod === "paste") {
-          const findings = performWebAnalysis(pastedCode);
-          if (findings)
-            finalResult.findings.push({ file: "붙여넣은 코드", ...findings });
-        } else if (sourceMethod === "upload" && selectedFileObject) {
-          if (selectedFileObject.name.toLowerCase().endsWith(".zip")) {
-            const zip = await JSZip.loadAsync(selectedFileObject);
-            for (const zipEntry of Object.values(zip.files)) {
-              if (!zipEntry.dir) {
-                const content = await zipEntry.async("string");
-                const findings = performWebAnalysis(content);
-                if (findings)
-                  finalResult.findings.push({
-                    file: zipEntry.name,
-                    ...findings,
-                  });
+      // 2. Electron의 main.js와 동일한 방식으로 파일을 순회하며 분석을 수행합니다.
+      setStatusMessage(`${filesToAnalyze.length}개 파일에 대한 분석을 시작합니다...`);
+      const finalResult = {
+        analysisType: analysisMode,
+        target: targetFunction,
+        findings: [] as any[],
+      };
+
+      for (const file of filesToAnalyze) {
+        let findings: any = null;
+
+        switch (analysisMode) {
+          case "keyword":
+            const parsed = parseKeywords(keywords);
+            if (parsed.length > 0) {
+              const results = runAdvancedKeywordAnalysis(file.content, parsed);
+              if (results && results.length > 0) {
+                findings = { results }; // main.js와 데이터 구조를 맞춰줍니다.
               }
             }
-          } else {
-            const content = await selectedFileObject.text();
-            const findings = performWebAnalysis(content);
-            if (findings)
-              finalResult.findings.push({
-                file: selectedFileObject.name,
-                ...findings,
-              });
-          }
+            break;
+
+          case "dependency":
+            if (targetFunction) {
+              const result = runDependencyAnalysis(file.content, targetFunction);
+              if (result && result.target) {
+                findings = result;
+              }
+            }
+            break;
+
+          case "callHierarchy":
+            if (targetFunction) {
+              const result = runCallHierarchyAnalysis(file.content, targetFunction);
+              if (result && result.callers.length > 0) {
+                findings = result;
+              }
+            }
+            break;
         }
 
-        processAnalysisResult(finalResult);
-      } catch (error) {
-        console.error("웹 분석 중 오류:", error);
-        setExtractionResult(
-          "# ❗ 분석 중 오류가 발생했습니다.\n\n" + (error as Error).message
-        );
-      } finally {
-        setIsLoading(false);
+        if (findings) {
+          finalResult.findings.push({ file: file.name, ...findings });
+        }
       }
+
+      // 3. 통합된 최종 결과를 공통 처리 함수로 전달합니다.
+      processAnalysisResult(finalResult);
+
+    } catch (error) {
+      console.error("웹 분석 중 오류:", error);
+      setExtractionResult(
+        "# ❗ 분석 중 오류가 발생했습니다.\n\n" + (error as Error).message
+      );
+    } finally {
+      setIsLoading(false);
+      setStatusMessage("");
     }
   };
 
@@ -324,26 +369,26 @@ const SourceExtractor = () => {
     return { nodes, edges };
   };
 
-  // [수정] 웹 버전 분석 로직이 데이터 '객체'를 반환하도록 변경
-  const performWebAnalysis = (content: string) => {
-    setStatusMessage("웹 브라우저에서 분석을 수행합니다...");
+  // // [수정] 웹 버전 분석 로직이 데이터 '객체'를 반환하도록 변경
+  // const performWebAnalysis = (content: string) => {
+  //   setStatusMessage("웹 브라우저에서 분석을 수행합니다...");
 
-    if (analysisMode === "keyword") {
-      const parsedKeywords = parseKeywords(keywords);
-      if (parsedKeywords.length === 0) return null;
-      const results = runAdvancedKeywordAnalysis(content, parsedKeywords);
-      return { results };
-    }
-    if (analysisMode === "dependency") {
-      if (!targetFunction || targetFunction.trim() === "") return null;
-      return runDependencyAnalysis(content, targetFunction);
-    }
-    if (analysisMode === "callHierarchy") {
-      if (!targetFunction || targetFunction.trim() === "") return null;
-      return runCallHierarchyAnalysis(content, targetFunction);
-    }
-    return null;
-  };
+  //   if (analysisMode === "keyword") {
+  //     const parsedKeywords = parseKeywords(keywords);
+  //     if (parsedKeywords.length === 0) return null;
+  //     const results = runAdvancedKeywordAnalysis(content, parsedKeywords);
+  //     return { results };
+  //   }
+  //   if (analysisMode === "dependency") {
+  //     if (!targetFunction || targetFunction.trim() === "") return null;
+  //     return runDependencyAnalysis(content, targetFunction);
+  //   }
+  //   if (analysisMode === "callHierarchy") {
+  //     if (!targetFunction || targetFunction.trim() === "") return null;
+  //     return runCallHierarchyAnalysis(content, targetFunction);
+  //   }
+  //   return null;
+  // };
 
   const createKeywordGraphData = (
     findings: { functionName: string; foundKeywords: string[] }[],
@@ -504,8 +549,7 @@ const SourceExtractor = () => {
         );
       } catch (error) {
         alert(
-          `프리셋을 가져오는 중 오류가 발생했습니다: ${
-            (error as Error).message
+          `프리셋을 가져오는 중 오류가 발생했습니다: ${(error as Error).message
           }`
         );
       } finally {
