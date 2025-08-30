@@ -1,0 +1,5 @@
+{
+  "watch": ["electron", "src/core"],
+  "ext": "ts",
+  "exec": "tsc --project tsconfig.electron.json && electron build/electron/main.js"
+}

@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "es2020",
+    "outDir": "build/electron",
+    "esModuleInterop": true,
+    "strict": true,
+    "resolveJsonModule": true,
+    "baseUrl": ".",
+    "skipLibCheck": true,
+    "paths": {
+      "core/*": ["src/core/*"]
+    }
+  },
+  "include": ["electron/**/*.ts", "src/core/**/*.ts"]
+}
