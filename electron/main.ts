@@ -43,7 +43,7 @@ function createWindow(): void {
 
   if (isDev) {
     mainWindow.loadURL("http://localhost:3000");
-    mainWindow.webContents.openDevTools();
+    // mainWindow.webContents.openDevTools();
   } else {
     // React 빌드 결과물인 index.html의 경로
     mainWindow.loadFile(path.join(__dirname, "../index.html"));

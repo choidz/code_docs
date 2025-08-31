@@ -4,7 +4,7 @@
   "description": "AI-based source code analysis and documentation tool.",
   "author": "Your Name",
   "private": true,
-  "main": "build/electron/main.js",
+  "main": "build/main.js",
   "homepage": "./",
   "dependencies": {
     "@testing-library/jest-dom": "^6.6.4",
@@ -13,23 +13,23 @@
     "electron-is-dev": "^2.0.0",
     "glob": "^10.4.2",
     "jszip": "^3.10.1",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",
     "react-syntax-highlighter": "^15.6.1",
     "reactflow": "^11.11.4",
     "recharts": "^3.1.2",
-    "typescript": "4.9.5",
     "web-vitals": "^2.1.4"
   },
   "devDependencies": {
     "@babel/parser": "^7.28.3",
     "@babel/traverse": "^7.28.3",
+    "@types/d3-dispatch": "^3.0.0",
     "@types/jest": "^27.5.2",
     "@types/jszip": "^3.4.0",
-    "@types/node": "^16.18.126",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.0",
+    "@types/node": "^20.19.11",
+    "@types/react": "^18.2.7",
+    "@types/react-dom": "^18.2.4",
     "@types/react-syntax-highlighter": "^15.5.13",
     "concurrently": "^8.2.2",
     "electron": "^31.0.1",
@@ -37,6 +37,7 @@
     "nodemon": "^3.1.10",
     "rimraf": "^6.0.1",
     "ts-node": "^10.9.2",
+    "typescript": "4.9.5",
     "wait-on": "^7.2.0"
   },
   "scripts": {
@@ -71,7 +72,7 @@
       "target": "dmg"
     },
     "extraMetadata": {
-      "main": "build/electron/main.js"
+      "main": "build/main.js"
     }
   },
   "browserslist": {
