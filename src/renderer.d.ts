@@ -1,10 +1,15 @@
+// types/index.ts에서 AnalysisResultPayload 타입을 가져옵니다.
+import type { AnalysisParams, AnalysisResultPayload } from "./types";
+
 export interface IElectronAPI {
-  runAnalysis: (options: any) => void;
+  runAnalysis: (options: AnalysisParams) => void;
 
-  // ▼▼▼ [수정] 모든 리스너 함수의 반환 타입을 () => void로 변경 ▼▼▼
-  onAnalysisResult: (callback: (result: string) => void) => () => void;
+  // onAnalysisResult의 콜백이 받는 데이터 타입을 string에서 AnalysisResultPayload로 변경합니다.
+  onAnalysisResult: (
+    callback: (result: AnalysisResultPayload) => void
+  ) => () => void;
+
   onStatusUpdate: (callback: (message: string) => void) => () => void;
-
   generateHeatmapData: (folderPath: string) => void;
   onHeatmapDataResult: (callback: (data: any) => void) => () => void;
 }

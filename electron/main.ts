@@ -15,16 +15,11 @@ import {
 
 // --- 타입 정의 ---
 
-interface AnalysisOptions {
-  analysisType: "dependency";
-  sourceMethod: "folder" | "upload" | "paste";
-  keywords: string;
-  targetFunction: string;
-  pastedCode: string;
-  folderPath: string;
-  filePath: string;
-}
-
+import type {
+  AnalysisParams,
+  AnalysisResultPayload,
+  DependencyFinding,
+} from "../src/types";
 // --- Electron 앱 생명주기 ---
 
 function createWindow(): void {
@@ -68,12 +63,12 @@ app.whenReady().then(() => {
 // 분석 실행 리스너
 ipcMain.on(
   "run-analysis",
-  async (event: IpcMainEvent, options: AnalysisOptions): Promise<void> => {
+  async (event: IpcMainEvent, options: AnalysisParams): Promise<void> => {
+    // 1. 요청 접수 및 상태 업데이트
     event.reply("analysis-status-update", "분석 요청을 접수했습니다...");
     const {
-      analysisType,
+      analysisMode,
       sourceMethod,
-      keywords,
       targetFunction,
       pastedCode,
       folderPath,
@@ -81,14 +76,20 @@ ipcMain.on(
     } = options;
 
     try {
+      // 2. 소스 메서드에 따라 분석할 파일 목록 생성
       const filesToAnalyze: { name: string; content: string }[] = [];
 
       if (sourceMethod === "folder") {
         if (!folderPath) throw new Error("폴더 경로를 입력해야 합니다.");
+        event.reply(
+          "analysis-status-update",
+          `'${folderPath}' 폴더를 스캔 중입니다...`
+        );
         const normalizedPath = folderPath.replace(/\\/g, "/");
         const files = await glob(
           `${normalizedPath}/**/*.{js,jsx,ts,tsx,cs,java}`
         );
+
         files.forEach((file) => {
           filesToAnalyze.push({
             name: path.basename(file),
@@ -97,6 +98,11 @@ ipcMain.on(
         });
       } else if (sourceMethod === "upload") {
         if (!filePath) throw new Error("파일을 선택해야 합니다.");
+        event.reply(
+          "analysis-status-update",
+          `'${path.basename(filePath)}' 파일을 처리 중입니다...`
+        );
+
         if (path.extname(filePath).toLowerCase() === ".zip") {
           const zipData = fs.readFileSync(filePath);
           const zip = await JSZip.loadAsync(zipData);
@@ -119,36 +125,54 @@ ipcMain.on(
         filesToAnalyze.push({ name: "붙여넣은 코드", content: pastedCode });
       }
 
-      processFiles(filesToAnalyze);
-    } catch (error: any) {
-      handleError(error);
-    }
+      if (filesToAnalyze.length === 0) {
+        throw new Error("분석할 파일을 찾지 못했습니다.");
+      }
 
-    function processFiles(files: { name: string; content: string }[]): void {
-      const finalResult = {
-        analysisType,
+      // 3. 파일 목록을 순회하며 분석 실행
+      event.reply(
+        "analysis-status-update",
+        `${filesToAnalyze.length}개 파일에 대한 분석을 시작합니다...`
+      );
+
+      const finalResult: AnalysisResultPayload = {
+        analysisType: "dependency",
         target: targetFunction,
-        keywords, // 키워드 정보도 결과에 포함시켜 전달
-        findings: [] as any[],
+        findings: [],
       };
 
-      files.forEach((file) => {
-        let findings: any = null;
-        switch (analysisType) {
+      for (const file of filesToAnalyze) {
+        let findings: DependencyFinding | null = null;
+
+        switch (analysisMode) {
           case "dependency":
             findings = runDependencyAnalysis(file.content, targetFunction);
             if (findings && findings.target) {
-              finalResult.findings.push({ file: file.name, ...findings });
+              // ✨ FileFinding<T> 구조에 맞춰 데이터를 추가합니다.
+              finalResult.findings.push({ file: file.name, results: findings });
             }
             break;
         }
-      });
-      event.reply("analysis-result", finalResult);
-    }
+      }
 
-    function handleError(error: Error): void {
-      console.error("[Main Process] 분석 중 오류 발생:", error);
-      event.reply("analysis-result", { error: error.message });
+      // 4. 최종 결과를 렌더러 프로세스로 전송
+      event.reply("analysis-status-update", "분석 완료!");
+      // ✨ [추가] 보내기 직전 데이터 확인용 로그
+      // console.log(
+      //   "[MAIN] 🚀 보내는 데이터:",
+      //   JSON.stringify(finalResult, null, 2)
+      // );
+
+      event.reply("analysis-result", finalResult);
+    } catch (error: any) {
+      // 5. 오류 발생 시 처리
+      // console.error("[Main Process] 분석 중 오류 발생:", error);
+
+      // ✨ [추가] 보내기 직전 에러 데이터 확인용 로그
+      const errorPayload = { error: error.message };
+      // console.log("[MAIN] 🚀 보내는 에러 데이터:", errorPayload);
+
+      event.reply("analysis-result", errorPayload);
     }
   }
 );
@@ -201,7 +225,7 @@ ipcMain.on(
       }
       event.reply("heatmap-data-result", root);
     } catch (error: any) {
-      console.error("히트맵 데이터 생성 오류:", error);
+      // console.error("히트맵 데이터 생성 오류:", error);
       event.reply("heatmap-data-result", { error: error.message });
     }
   }

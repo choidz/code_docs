@@ -93,17 +93,6 @@ export const calculateComplexity = (code: string): number => {
   return complexity;
 };
 
-// --- 주 분석 함수 ---
-
-/**
- * 콤마로 구분된 키워드 문자열을 배열로 변환합니다.
- */
-export const parseKeywords = (keywordString: string): string[] =>
-  keywordString
-    .split(",")
-    .map((k) => k.trim())
-    .filter(Boolean);
-
 /**
  * 특정 함수(`targetFuncName`)가 호출하는 다른 함수들의 목록을 분석합니다.
  */

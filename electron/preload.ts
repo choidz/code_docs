@@ -1,26 +1,27 @@
-// electron/preload.ts
-
-// IpcRendererEvent 타입을 electron에서 가져옵니다.
 import { contextBridge, ipcRenderer, IpcRendererEvent } from "electron";
+import type { AnalysisParams, AnalysisResultPayload } from "../src/types";
 
 contextBridge.exposeInMainWorld("electronAPI", {
-  // options의 타입을 any로 명시합니다.
-  runAnalysis: (options: any) => ipcRenderer.send("run-analysis", options),
+  runAnalysis: (options: AnalysisParams) =>
+    ipcRenderer.send("run-analysis", options),
 
-  // callback이 함수 타입임을 명시합니다.
-  onAnalysisResult: (callback: (...args: any[]) => void) => {
-    // event와 args의 타입을 명시합니다.
-    const subscription = (event: IpcRendererEvent, ...args: any[]) =>
-      callback(...args);
+  // ✨ 이 부분을 수정합니다.
+  onAnalysisResult: (
+    callback: (result: AnalysisResultPayload | { error: string }) => void
+  ) => {
+    // ✨ ...args 대신 result라는 이름으로 데이터를 직접 받습니다.
+    const subscription = (
+      event: IpcRendererEvent,
+      result: AnalysisResultPayload | { error: string }
+    ) => callback(result); // ✨ result를 그대로 전달합니다.
+
     ipcRenderer.on("analysis-result", subscription);
     return () => {
       ipcRenderer.removeListener("analysis-result", subscription);
     };
   },
 
-  // callback이 함수 타입임을 명시합니다.
   onStatusUpdate: (callback: (message: string) => void) => {
-    // event와 args의 타입을 명시합니다.
     const subscription = (event: IpcRendererEvent, message: string) =>
       callback(message);
     ipcRenderer.on("analysis-status-update", subscription);
@@ -29,15 +30,12 @@ contextBridge.exposeInMainWorld("electronAPI", {
     };
   },
 
-  // folderPath가 문자열 타입임을 명시합니다.
   generateHeatmapData: (folderPath: string) =>
     ipcRenderer.send("generate-heatmap-data", folderPath),
 
-  // callback이 함수 타입임을 명시합니다.
-  onHeatmapDataResult: (callback: (...args: any[]) => void) => {
-    // event와 args의 타입을 명시합니다.
-    const subscription = (event: IpcRendererEvent, ...args: any[]) =>
-      callback(...args);
+  // ✨ Heatmap 부분도 동일하게 수정해주는 것이 좋습니다.
+  onHeatmapDataResult: (callback: (data: any) => void) => {
+    const subscription = (event: IpcRendererEvent, data: any) => callback(data);
     ipcRenderer.on("heatmap-data-result", subscription);
     return () => {
       ipcRenderer.removeListener("heatmap-data-result", subscription);

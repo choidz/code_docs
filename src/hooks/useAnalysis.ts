@@ -1,22 +1,14 @@
-import JSZip from "jszip";
 import { useEffect, useState } from "react";
 import { type Edge, type Node } from "reactflow";
-import { runDependencyAnalysis } from "../core/analysis";
-import { createDependencyGraphData } from "../services/graphService";
+import {
+  processAnalysisResult,
+  runWebAnalysis,
+} from "../services/analysisService";
+import type { AnalysisParams, AnalysisResultPayload } from "../types";
 
 interface GraphData {
   nodes: Node[];
   edges: Edge[];
-}
-
-interface AnalysisParams {
-  analysisMode: "dependency" | "heatmap";
-  targetFunction: string;
-  sourceMethod: "paste" | "upload" | "folder";
-  pastedCode: string;
-  folderPath: string;
-  filePath: string;
-  selectedFileObject: File | null;
 }
 
 export const useAnalysis = () => {
@@ -29,51 +21,56 @@ export const useAnalysis = () => {
   });
   const [isElectron, setIsElectron] = useState<boolean>(false);
 
-  const processAnalysisResult = (result: any) => {
-    if (!result || !result.findings || result.findings.length === 0) {
+  const handleAnalysisResult = (
+    result: AnalysisResultPayload | { error: string } | null
+  ) => {
+    // 1. null 또는 undefined인 경우 처리
+    if (!result) {
       setExtractionResult("분석 결과를 찾지 못했습니다.");
       setGraphData({ nodes: [], edges: [] });
       return;
     }
 
-    let fullReport = `# 📝 분석 결과\n\n`;
-    let newGraphData: GraphData = { nodes: [], edges: [] };
+    // 2. 에러 객체인 경우를 명확하게 확인하고 처리
+    //    'error' in result 구문이 TypeScript에게 타입을 확신시켜주는 핵심입니다.
+    if ("error" in result) {
+      setExtractionResult(
+        `# ❗ 분석 중 오류가 발생했습니다.\n\n${result.error}`
+      );
+      setGraphData({ nodes: [], edges: [] });
+      return;
+    }
 
-    result.findings.forEach((findingGroup: any) => {
-      fullReport += `## 📄 소스: ${findingGroup.file}\n`;
+    // 3. 위 관문을 통과했다면, 이 아래부터 result는 무조건 AnalysisResultPayload 타입입니다.
+    //    이제 .findings 속성에 안전하게 접근할 수 있습니다.
+    if (result.findings.length === 0) {
+      setExtractionResult("분석 결과를 찾지 못했습니다.");
+      setGraphData({ nodes: [], edges: [] });
+      return;
+    }
 
-      switch (result.analysisType) {
-        case "dependency":
-          const { target, dependencies } = findingGroup;
-          newGraphData = createDependencyGraphData(result.target, dependencies);
-          fullReport += `### 🎯 타겟 함수: \`${result.target}\`\n\`\`\`javascript\n${target}\n\`\`\`\n`;
-          if (dependencies.length > 0) {
-            fullReport += `\n#### 📞 호출하는 함수 목록\n`;
-            dependencies.forEach((dep: any) => {
-              fullReport += `\n* **\`${dep.name}\`**\n\`\`\`javascript\n${dep.content}\n\`\`\`\n`;
-            });
-          }
-          break;
-      }
-    });
-
-    setExtractionResult(fullReport);
+    // 4. 성공적인 결과만 가공하여 상태 업데이트
+    const { report, graphData: newGraphData } = processAnalysisResult(result);
+    setExtractionResult(report);
     setGraphData(newGraphData);
   };
 
   useEffect(() => {
     const electronCheck = !!window.electronAPI;
     setIsElectron(electronCheck);
+
     if (electronCheck) {
       const removeListener = window.electronAPI.onAnalysisResult(
-        (result: any) => {
+        (result: AnalysisResultPayload | { error: string }) => {
+          // ✨ [추가] 받자마자 데이터 확인용 로그
+          console.log("[RENDERER] 📦 받은 데이터:", result);
           setIsLoading(false);
           setStatusMessage("");
-          processAnalysisResult(result);
+          handleAnalysisResult(result);
         }
       );
       const removeStatusListener = window.electronAPI.onStatusUpdate(
-        (message) => {
+        (message: string) => {
           setStatusMessage(message);
         }
       );
@@ -96,77 +93,11 @@ export const useAnalysis = () => {
     }
 
     try {
-      if (params.sourceMethod === "folder") {
-        throw new Error("폴더 분석은 데스크톱 앱에서만 지원됩니다.");
-      }
-
-      setStatusMessage("분석할 파일을 준비 중입니다...");
-      const filesToAnalyze: { name: string; content: string }[] = [];
-
-      if (params.sourceMethod === "paste") {
-        if (!params.pastedCode)
-          throw new Error("분석할 소스 코드를 입력해야 합니다.");
-        filesToAnalyze.push({
-          name: "붙여넣은 코드",
-          content: params.pastedCode,
-        });
-      } else if (
-        params.sourceMethod === "upload" &&
-        params.selectedFileObject
-      ) {
-        if (params.selectedFileObject.name.toLowerCase().endsWith(".zip")) {
-          const zip = await JSZip.loadAsync(params.selectedFileObject);
-          for (const zipEntry of Object.values(zip.files)) {
-            if (!zipEntry.dir) {
-              const content = await zipEntry.async("string");
-              filesToAnalyze.push({ name: zipEntry.name, content });
-            }
-          }
-        } else {
-          const content = await params.selectedFileObject.text();
-          filesToAnalyze.push({
-            name: params.selectedFileObject.name,
-            content,
-          });
-        }
-      }
-
-      if (filesToAnalyze.length === 0) {
-        throw new Error("분석할 파일이 없습니다.");
-      }
-
-      setStatusMessage(
-        `${filesToAnalyze.length}개 파일에 대한 분석을 시작합니다...`
-      );
-      const finalResult: any = {
-        analysisType: params.analysisMode,
-        target: params.targetFunction,
-        findings: [],
-      };
-
-      for (const file of filesToAnalyze) {
-        let findings: any = null;
-        switch (params.analysisMode) {
-          case "dependency":
-            if (params.targetFunction) {
-              const result = runDependencyAnalysis(
-                file.content,
-                params.targetFunction
-              );
-              if (result && result.target) findings = result;
-            }
-            break;
-        }
-        if (findings) {
-          finalResult.findings.push({ file: file.name, ...findings });
-        }
-      }
-
-      processAnalysisResult(finalResult);
+      setStatusMessage("웹 환경에서 분석을 시작합니다...");
+      const finalResult = await runWebAnalysis(params);
+      handleAnalysisResult(finalResult);
     } catch (error) {
-      setExtractionResult(
-        "# ❗ 분석 중 오류가 발생했습니다.\n\n" + (error as Error).message
-      );
+      handleAnalysisResult({ error: (error as Error).message });
     } finally {
       setIsLoading(false);
       setStatusMessage("");
