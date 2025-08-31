@@ -5,12 +5,8 @@ import FormField from "./FormField";
 // 부모로부터 받을 모든 props를 정의합니다.
 interface AnalysisFormProps {
   // [수정] heatmap 타입을 추가합니다.
-  analysisMode: "keyword" | "dependency" | "heatmap" | "callHierarchy";
-  setAnalysisMode: (
-    mode: "keyword" | "dependency" | "heatmap" | "callHierarchy"
-  ) => void;
-  keywords: string;
-  setKeywords: (keywords: string) => void;
+  analysisMode: "dependency" | "heatmap";
+  setAnalysisMode: (mode: "dependency" | "heatmap") => void;
   shouldExtractBlocks: boolean;
   setShouldExtractBlocks: (should: boolean) => void;
   targetFunction: string;
@@ -45,20 +41,10 @@ const AnalysisForm: React.FC<AnalysisFormProps> = (props) => {
         <select
           value={props.analysisMode}
           onChange={(e) =>
-            props.setAnalysisMode(
-              e.target.value as
-                | "keyword"
-                | "dependency"
-                | "heatmap"
-                | "callHierarchy"
-            )
+            props.setAnalysisMode(e.target.value as "dependency" | "heatmap")
           }
           className='language-select'>
-          <option value='keyword'>🔑 키워드 검색</option>
           <option value='dependency'>🔗 의존성 분석 (JS/TS)</option>
-          <option value='callHierarchy'>
-            📞 호출 계층 분석 (Call Hierarchy)
-          </option>
           {props.isElectron && <option value='heatmap'>🔥 코드 히트맵</option>}
         </select>
       </FormField>
@@ -66,24 +52,7 @@ const AnalysisForm: React.FC<AnalysisFormProps> = (props) => {
       {/* ▼▼▼ [핵심] analysisMode가 'heatmap'이 아닐 때만 아래 내용을 렌더링합니다. ▼▼▼ */}
       {props.analysisMode !== "heatmap" && (
         <>
-          {props.analysisMode === "keyword" && (
-            <>
-              <FormField
-                label='추출할 키워드'
-                description={`찾고 싶은 키워드를 콤마(,)로 구분하여 입력하세요. (${
-                  props.keywords.split(",").filter((k) => k.trim()).length
-                }개 입력됨)`}>
-                <textarea
-                  value={props.keywords}
-                  onChange={(e) => props.setKeywords(e.target.value)}
-                  rows={3}
-                />
-              </FormField>
-            </>
-          )}
-
-          {(props.analysisMode === "dependency" ||
-            props.analysisMode === "callHierarchy") && (
+          {props.analysisMode === "dependency" && (
             <FormField
               label='대상 함수 이름'
               description='이 함수가 호출하는 다른 함수들을 찾습니다.'>

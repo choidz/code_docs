@@ -6,18 +6,7 @@ import * as t from "@babel/types";
 
 // --- 타입 정의 ---
 
-export interface KeywordFinding {
-  functionName: string;
-  foundKeywords: string[];
-  content: string;
-}
-
 export interface DependencyInfo {
-  name: string;
-  content: string;
-}
-
-export interface CallerInfo {
   name: string;
   content: string;
 }
@@ -25,11 +14,6 @@ export interface CallerInfo {
 export interface DependencyAnalysisResult {
   target: string | null;
   dependencies: DependencyInfo[];
-}
-
-export interface CallHierarchyAnalysisResult {
-  target: string;
-  callers: CallerInfo[];
 }
 
 // --- 헬퍼 함수 ---
@@ -179,115 +163,6 @@ export const runDependencyAnalysis = (
   } catch (e) {
     console.error("AST 의존성 분석 오류:", e);
     return null;
-  }
-  return findings;
-};
-
-/**
- * 특정 함수(`targetFuncName`)를 호출하는 모든 함수(호출자) 목록을 분석합니다.
- */
-export const runCallHierarchyAnalysis = (
-  code: string,
-  targetFuncName: string
-): CallHierarchyAnalysisResult => {
-  const callers: CallerInfo[] = [];
-  const processedFuncs = new Set<string>();
-  try {
-    const ast = parser.parse(code, {
-      sourceType: "module",
-      plugins: ["jsx", "typescript"],
-      errorRecovery: true,
-    });
-    traverse(ast, {
-      CallExpression(path: NodePath<t.CallExpression>) {
-        const callee = path.node.callee;
-        let calleeName: string | null = null;
-
-        if (t.isIdentifier(callee)) {
-          calleeName = callee.name;
-        } else if (
-          t.isMemberExpression(callee) &&
-          t.isIdentifier(callee.property)
-        ) {
-          calleeName = callee.property.name;
-        }
-
-        if (calleeName === targetFuncName) {
-          const parentFunctionPath = path.findParent((p) =>
-            p.isFunction()
-          ) as NodePath<t.Function> | null;
-          if (parentFunctionPath) {
-            const callerName = getFunctionName(parentFunctionPath);
-            if (callerName && !processedFuncs.has(callerName)) {
-              if (
-                parentFunctionPath.node.start != null &&
-                parentFunctionPath.node.end != null
-              ) {
-                callers.push({
-                  name: callerName,
-                  content: code.slice(
-                    parentFunctionPath.node.start,
-                    parentFunctionPath.node.end
-                  ),
-                });
-                processedFuncs.add(callerName);
-              }
-            }
-          }
-        }
-      },
-    });
-  } catch (e) {
-    console.error("호출 계층 분석 오류:", e);
-  }
-  return { target: targetFuncName, callers };
-};
-
-/**
- * 코드 내 각 함수에서 주어진 키워드 배열이 발견되는지 분석합니다.
- */
-export const runAdvancedKeywordAnalysis = (
-  code: string,
-  keywordArray: string[]
-): KeywordFinding[] => {
-  const findings: KeywordFinding[] = [];
-  const lowerCaseKeywords = keywordArray.map((k) => k.toLowerCase());
-  try {
-    const ast = parser.parse(code, {
-      sourceType: "module",
-      plugins: ["jsx", "typescript"],
-      errorRecovery: true,
-    });
-    traverse(ast, {
-      Function(path: NodePath<t.Function>) {
-        const functionName = getFunctionName(path);
-        if (!functionName) return;
-
-        if (path.node.start != null && path.node.end != null) {
-          const functionContent = code.slice(path.node.start, path.node.end);
-          const lowerCaseContent = functionContent.toLowerCase();
-          const foundKeywords = new Set<string>();
-
-          lowerCaseKeywords.forEach((keyword, index) => {
-            if (lowerCaseContent.includes(keyword)) {
-              foundKeywords.add(keywordArray[index]);
-            }
-          });
-
-          if (foundKeywords.size > 0) {
-            if (!findings.some((f) => f.functionName === functionName)) {
-              findings.push({
-                functionName: functionName,
-                foundKeywords: Array.from(foundKeywords),
-                content: functionContent,
-              });
-            }
-          }
-        }
-      },
-    });
-  } catch (e) {
-    console.error("AST 기반 키워드 분석 오류:", e);
   }
   return findings;
 };

@@ -1,17 +1,8 @@
 import JSZip from "jszip";
 import { useEffect, useState } from "react";
 import { type Edge, type Node } from "reactflow";
-import {
-  parseKeywords,
-  runAdvancedKeywordAnalysis,
-  runCallHierarchyAnalysis,
-  runDependencyAnalysis,
-} from "../core/analysis";
-import {
-  createCallHierarchyGraphData,
-  createDependencyGraphData,
-  createKeywordGraphData,
-} from "../services/graphService";
+import { runDependencyAnalysis } from "../core/analysis";
+import { createDependencyGraphData } from "../services/graphService";
 
 interface GraphData {
   nodes: Node[];
@@ -19,9 +10,7 @@ interface GraphData {
 }
 
 interface AnalysisParams {
-  analysisMode: "keyword" | "dependency" | "heatmap" | "callHierarchy";
-  keywords: string;
-  shouldExtractBlocks: boolean;
+  analysisMode: "dependency" | "heatmap";
   targetFunction: string;
   sourceMethod: "paste" | "upload" | "folder";
   pastedCode: string;
@@ -64,27 +53,6 @@ export const useAnalysis = () => {
               fullReport += `\n* **\`${dep.name}\`**\n\`\`\`javascript\n${dep.content}\n\`\`\`\n`;
             });
           }
-          break;
-        case "callHierarchy":
-          const { callers } = findingGroup;
-          newGraphData = createCallHierarchyGraphData(result.target, callers);
-          fullReport += `### 📞 \`${result.target}\` 함수를 호출하는 함수 목록\n`;
-          callers.forEach((caller: any) => {
-            fullReport += `\n* **\`${caller.name}\`**\n\`\`\`javascript\n${caller.content}\n\`\`\`\n`;
-          });
-          break;
-        case "keyword":
-          const { results } = findingGroup;
-          // Note: `keywords` state is not directly available here. We pass it during analysis.
-          const parsedKeywords = parseKeywords(result.keywords);
-          newGraphData = createKeywordGraphData(results, parsedKeywords);
-          results.forEach((finding: any) => {
-            fullReport += `\n---\n**[함수: ${
-              finding.functionName
-            }] 키워드 \`${finding.foundKeywords.join(
-              ", "
-            )}\` 발견**\n\`\`\`javascript\n${finding.content}\n\`\`\`\n`;
-          });
           break;
       }
     });
@@ -173,20 +141,12 @@ export const useAnalysis = () => {
       const finalResult: any = {
         analysisType: params.analysisMode,
         target: params.targetFunction,
-        keywords: params.keywords, // 키워드 정보를 결과 객체에 포함시켜 전달
         findings: [],
       };
 
       for (const file of filesToAnalyze) {
         let findings: any = null;
         switch (params.analysisMode) {
-          case "keyword":
-            const parsed = parseKeywords(params.keywords);
-            if (parsed.length > 0) {
-              const results = runAdvancedKeywordAnalysis(file.content, parsed);
-              if (results && results.length > 0) findings = { results };
-            }
-            break;
           case "dependency":
             if (params.targetFunction) {
               const result = runDependencyAnalysis(
@@ -194,15 +154,6 @@ export const useAnalysis = () => {
                 params.targetFunction
               );
               if (result && result.target) findings = result;
-            }
-            break;
-          case "callHierarchy":
-            if (params.targetFunction) {
-              const result = runCallHierarchyAnalysis(
-                file.content,
-                params.targetFunction
-              );
-              if (result && result.callers.length > 0) findings = result;
             }
             break;
         }

@@ -15,8 +15,6 @@ export interface AstFunction {
 
 export interface AnalysisPreset {
   name: string;
-  mode: "keyword" | "dependency" | "callHierarchy";
-  keywords: string;
+  mode: "dependency";
   targetFunction: string;
-  shouldExtractBlocks: boolean;
 }

@@ -10,16 +10,13 @@ import path from "path";
 // 공통 분석 모듈에서 필요한 모든 함수를 가져옵니다.
 import {
   calculateComplexity,
-  parseKeywords,
-  runAdvancedKeywordAnalysis,
-  runCallHierarchyAnalysis,
   runDependencyAnalysis,
 } from "../src/core/analysis";
 
 // --- 타입 정의 ---
 
 interface AnalysisOptions {
-  analysisType: "dependency" | "callHierarchy" | "keyword";
+  analysisType: "dependency";
   sourceMethod: "folder" | "upload" | "paste";
   keywords: string;
   targetFunction: string;
@@ -142,21 +139,6 @@ ipcMain.on(
             findings = runDependencyAnalysis(file.content, targetFunction);
             if (findings && findings.target) {
               finalResult.findings.push({ file: file.name, ...findings });
-            }
-            break;
-          case "callHierarchy":
-            findings = runCallHierarchyAnalysis(file.content, targetFunction);
-            if (findings && findings.callers.length > 0) {
-              finalResult.findings.push({ file: file.name, ...findings });
-            }
-            break;
-          case "keyword":
-            const results = runAdvancedKeywordAnalysis(
-              file.content,
-              parseKeywords(keywords)
-            );
-            if (results && results.length > 0) {
-              finalResult.findings.push({ file: file.name, results });
             }
             break;
         }

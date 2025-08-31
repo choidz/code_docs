@@ -24,10 +24,9 @@ const SourceExtractor = () => {
   const analysisHook = useAnalysis();
 
   // --- UI Form과 직접적으로 관련된 상태만 컴포넌트에서 관리합니다 ---
-  const [analysisMode, setAnalysisMode] = useState<
-    "keyword" | "dependency" | "heatmap" | "callHierarchy"
-  >("dependency");
-  const [keywords, setKeywords] = useState<string>("private, SELECT");
+  const [analysisMode, setAnalysisMode] = useState<"dependency" | "heatmap">(
+    "dependency"
+  );
   const [shouldExtractBlocks, setShouldExtractBlocks] = useState<boolean>(true);
   const [targetFunction, setTargetFunction] = useState<string>("");
   const [sourceMethod, setSourceMethod] = useState<
@@ -62,8 +61,6 @@ const SourceExtractor = () => {
     // 현재 Form의 모든 상태를 모아 analysisHook의 runAnalysis 함수에 전달합니다.
     analysisHook.runAnalysis({
       analysisMode,
-      keywords,
-      shouldExtractBlocks,
       targetFunction,
       sourceMethod,
       pastedCode,
@@ -77,10 +74,8 @@ const SourceExtractor = () => {
     const preset = presetsHook.handlePresetChange(e.target.value);
     if (preset) {
       // 선택된 프리셋의 값으로 Form 상태를 업데이트합니다.
-      setAnalysisMode(preset.mode as "keyword" | "dependency");
-      setKeywords(preset.keywords);
+      setAnalysisMode(preset.mode as "dependency");
       setTargetFunction(preset.targetFunction);
-      setShouldExtractBlocks(preset.shouldExtractBlocks);
     }
   };
 
@@ -92,9 +87,7 @@ const SourceExtractor = () => {
 
     presetsHook.handleSavePreset({
       mode: analysisMode,
-      keywords,
       targetFunction,
-      shouldExtractBlocks,
     });
   };
 
@@ -124,8 +117,6 @@ const SourceExtractor = () => {
         // Form 상태와 핸들러
         analysisMode={analysisMode}
         setAnalysisMode={setAnalysisMode}
-        keywords={keywords}
-        setKeywords={setKeywords}
         shouldExtractBlocks={shouldExtractBlocks}
         setShouldExtractBlocks={setShouldExtractBlocks}
         targetFunction={targetFunction}

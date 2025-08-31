@@ -2,17 +2,8 @@
 
 import JSZip from "jszip";
 import { type Edge, type Node } from "reactflow";
-import {
-  parseKeywords,
-  runAdvancedKeywordAnalysis,
-  runCallHierarchyAnalysis,
-  runDependencyAnalysis,
-} from "../core/analysis";
-import {
-  createCallHierarchyGraphData,
-  createDependencyGraphData,
-  createKeywordGraphData,
-} from "./graphService";
+import { runDependencyAnalysis } from "../core/analysis";
+import { createDependencyGraphData } from "./graphService";
 
 // UI가 사용할 최종 결과물의 타입 정의
 interface ProcessedResult {
@@ -25,8 +16,7 @@ interface ProcessedResult {
 
 // 분석에 필요한 파라미터 타입 정의
 interface AnalysisParams {
-  analysisMode: "keyword" | "dependency" | "heatmap" | "callHierarchy";
-  keywords: string;
+  analysisMode: "dependency" | "heatmap";
   targetFunction: string;
   sourceMethod: "paste" | "upload" | "folder";
   pastedCode: string;
@@ -71,20 +61,12 @@ export const runWebAnalysis = async (params: AnalysisParams) => {
   const finalResult: any = {
     analysisType: params.analysisMode,
     target: params.targetFunction,
-    keywords: params.keywords,
     findings: [],
   };
 
   for (const file of filesToAnalyze) {
     let findings: any = null;
     switch (params.analysisMode) {
-      case "keyword":
-        const parsed = parseKeywords(params.keywords);
-        if (parsed.length > 0) {
-          const results = runAdvancedKeywordAnalysis(file.content, parsed);
-          if (results && results.length > 0) findings = { results };
-        }
-        break;
       case "dependency":
         if (params.targetFunction) {
           const result = runDependencyAnalysis(
@@ -92,15 +74,6 @@ export const runWebAnalysis = async (params: AnalysisParams) => {
             params.targetFunction
           );
           if (result && result.target) findings = result;
-        }
-        break;
-      case "callHierarchy":
-        if (params.targetFunction) {
-          const result = runCallHierarchyAnalysis(
-            file.content,
-            params.targetFunction
-          );
-          if (result && result.callers.length > 0) findings = result;
         }
         break;
     }
@@ -141,26 +114,6 @@ export const processAnalysisResult = (result: any): ProcessedResult => {
             fullReport += `\n* **\`${dep.name}\`**\n\`\`\`javascript\n${dep.content}\n\`\`\`\n`;
           });
         }
-        break;
-      case "callHierarchy":
-        const { callers } = findingGroup;
-        graphData = createCallHierarchyGraphData(result.target, callers);
-        fullReport += `### 📞 \`${result.target}\` 함수를 호출하는 함수 목록\n`;
-        callers.forEach((caller: any) => {
-          fullReport += `\n* **\`${caller.name}\`**\n\`\`\`javascript\n${caller.content}\n\`\`\`\n`;
-        });
-        break;
-      case "keyword":
-        const { results } = findingGroup;
-        const parsedKeywords = parseKeywords(result.keywords);
-        graphData = createKeywordGraphData(results, parsedKeywords);
-        results.forEach((finding: any) => {
-          fullReport += `\n---\n**[함수: ${
-            finding.functionName
-          }] 키워드 \`${finding.foundKeywords.join(
-            ", "
-          )}\` 발견**\n\`\`\`javascript\n${finding.content}\n\`\`\`\n`;
-        });
         break;
     }
   });
