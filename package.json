@@ -4,7 +4,7 @@
   "description": "AI-based source code analysis and documentation tool.",
   "author": "Your Name",
   "private": true,
-  "main": "build/main.js",
+  "main": "build/electron/main.js",
   "homepage": "./",
   "dependencies": {
     "@testing-library/jest-dom": "^6.6.4",
@@ -26,25 +26,25 @@
   "devDependencies": {
     "@babel/parser": "^7.28.3",
     "@babel/traverse": "^7.28.3",
-    "@playwright/test": "^1.55.0",
+    "@playwright/test": "^1.45.3",
     "@types/d3-dispatch": "^3.0.0",
     "@types/jest": "^27.5.2",
     "@types/jszip": "^3.4.0",
-    "@types/node": "^20.19.11",
+    "@types/node": "^20.14.12",
     "@types/react": "^18.2.7",
     "@types/react-dom": "^18.2.4",
     "@types/react-syntax-highlighter": "^15.5.13",
-    "@vitejs/plugin-react": "^4.7.0",
-    "@vitest/ui": "^3.2.4",
+    "@vitejs/plugin-react": "^4.3.1",
+    "@vitest/ui": "^2.0.4",
     "concurrently": "^8.2.2",
     "electron": "^31.0.1",
     "electron-builder": "^24.13.3",
-    "jsdom": "^26.1.0",
+    "jsdom": "^24.1.1",
     "nodemon": "^3.1.10",
     "rimraf": "^6.0.1",
     "ts-node": "^10.9.2",
-    "typescript": "4.9.5",
-    "vitest": "^3.2.4",
+    "typescript": "^5.5.3",
+    "vitest": "^2.0.4",
     "wait-on": "^7.2.0"
   },
   "scripts": {
@@ -55,10 +55,10 @@
     "build": "npm run clean && npm run build:react && npm run build:electron",
     "test": "vitest",
     "test:ui": "vitest --ui",
+    "test:e2e": "playwright test",
     "eject": "react-scripts eject",
     "electron:start": "concurrently \"npm start\" \"wait-on http://localhost:3000 && nodemon\"",
-    "electron:build": "npm run build && electron-builder",
-    "test:e2e": "playwright test"
+    "electron:build": "npm run build && electron-builder"
   },
   "optionalDependencies": {
     "fsevents": "*"
@@ -81,7 +81,7 @@
       "target": "dmg"
     },
     "extraMetadata": {
-      "main": "build/main.js"
+      "main": "build/electron/main.js"
     }
   },
   "browserslist": {
