@@ -5,8 +5,6 @@
 /.pnp
 .pnp.js
 
-# testing
-/coverage
 
 # production
 /build
@@ -25,5 +23,13 @@ yarn-error.log*
 # electron
 /dist
 
-
+# config
 .env
+
+# Test Artifacts & Reports
+/coverage
+.vitest-cache
+/test-results
+/tests
+*.test.tsx
+*.test.ts
