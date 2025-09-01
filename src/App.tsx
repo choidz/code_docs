@@ -1,10 +1,7 @@
-import React from 'react';
-import './App.css';
-// import KeywordAnalyzer from './components/KeywordAnalyzer';
-// import AstAnalyzer from './components/AstAnalyzer';
+import "./App.css";
 
-import AiAssistant from './components/AiAssistant';
-import SourceExtractor from './components/SourceExtractor';
+import AiAssistant from "./components/AiAssistant";
+import SourceExtractor from "./components/SourceExtractor";
 
 /**
  * 이제 App 컴포넌트는 전체 레이아웃과 주요 기능 컴포넌트들을
@@ -12,8 +9,8 @@ import SourceExtractor from './components/SourceExtractor';
  */
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
+    <div className='App'>
+      <header className='App-header'>
         <h1>소스 코드 분석 및 추출 도구</h1>
 
         {/* 키워드 기반 분석기 컴포넌트 */}
@@ -21,7 +18,6 @@ function App() {
 
         {/* AST 기반 분석기 컴포넌트 */}
         <AiAssistant />
-
       </header>
     </div>
   );
