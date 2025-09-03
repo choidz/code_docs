@@ -33,12 +33,19 @@ function createWindow(): void {
     },
   });
 
+  // ✨ [핵심 수정] isDev가 true일 때는 개발 서버 URL을,
+  //    false일 때 (프로덕션 또는 E2E 테스트 환경)는 file:// 프로토콜을 사용한
+  //    index.html의 절대 경로를 사용하도록 startUrl 변수를 만듭니다.
+  const startUrl = isDev
+    ? "http://localhost:3000"
+    : `file://${path.join(__dirname, "../index.html")}`;
+
+  // ✨ 생성된 startUrl을 로드합니다.
+  mainWindow.loadURL(startUrl);
+
+  // 개발 환경에서는 DevTools를 엽니다.
   if (isDev) {
-    mainWindow.loadURL("http://localhost:3000");
-    // mainWindow.webContents.openDevTools();
-  } else {
-    // React 빌드 결과물인 index.html의 경로
-    mainWindow.loadFile(path.join(__dirname, "../index.html"));
+    mainWindow.webContents.openDevTools();
   }
 }
 

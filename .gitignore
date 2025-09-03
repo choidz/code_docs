@@ -30,6 +30,6 @@ yarn-error.log*
 /coverage
 .vitest-cache
 /test-results
-/tests
-*.test.tsx
-*.test.ts
+# /tests
+# *.test.tsx
+# *.test.ts
