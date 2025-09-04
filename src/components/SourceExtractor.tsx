@@ -23,7 +23,7 @@ const SourceExtractor = () => {
   const { isElectron, runAnalysis } = useAnalysis();
 
   // --- UI Form과 직접적으로 관련된 상태만 관리합니다 ---
-  const [analysisMode, setAnalysisMode] = useState<"dependency" | "heatmap">("dependency");
+  const [analysisMode, setAnalysisMode] = useState<"dependency" | "heatmap" | "module">("dependency");
   const [targetFunction, setTargetFunction] = useState<string>("");
   const [sourceMethod, setSourceMethod] = useState<"paste" | "upload" | "folder">("paste");
   const [pastedCode, setPastedCode] = useState<string>("");

@@ -1,23 +1,34 @@
-
 import { create } from 'zustand';
 import { type Node, type Edge } from 'reactflow';
 import { processAnalysisResult } from '../services/analysisService';
-import type { AnalysisResultPayload } from '../types';
+// ✨ 수정된 타입 정의를 모두 가져옵니다.
+import type {
+    AnalysisResultPayload,
+    ModuleGraphPayload,
+    ReactAnalysisPayload,
+} from '../types';
+
+interface GraphData {
+    nodes: Node[];
+    edges: Edge[];
+}
 
 // 스토어가 관리할 상태의 타입 정의
 interface AnalysisState {
     isLoading: boolean;
     statusMessage: string;
     extractionResult: string;
-    graphData: {
-        nodes: Node[];
-        edges: Edge[];
-    };
+    graphData: GraphData;
+    moduleGraphData: GraphData;
     actions: {
         startAnalysis: () => void;
-        setSuccess: (report: string, graphData: { nodes: Node[]; edges: Edge[] }) => void;
+        setSuccess: (report: string, graphData: GraphData) => void;
         setError: (errorMessage: string) => void;
-        handleAnalysisResult: (result: AnalysisResultPayload | { error: string } | null) => void;
+        // ✨ [수정] 핸들러가 ReactAnalysisPayload 타입도 받을 수 있도록 시그니처를 업데이트합니다.
+        handleAnalysisResult: (
+            result: AnalysisResultPayload | ModuleGraphPayload | ReactAnalysisPayload | { error: string } | null,
+            targetFunction: string
+        ) => void;
     };
 }
 
@@ -28,58 +39,78 @@ export const useAnalysisStore = create<AnalysisState>((set, get) => ({
     statusMessage: '',
     extractionResult: '',
     graphData: { nodes: [], edges: [] },
+    moduleGraphData: { nodes: [], edges: [] },
 
     // 2. 상태를 변경하는 함수 (Actions)
     actions: {
-        // 분석 시작 시 상태 초기화
         startAnalysis: () => set({
             isLoading: true,
             extractionResult: '',
             statusMessage: '',
-            graphData: { nodes: [], edges: [] }
+            graphData: { nodes: [], edges: [] },
+            moduleGraphData: { nodes: [], edges: [] },
         }),
 
-        // 성공 시 결과 업데이트
         setSuccess: (report, graphData) => set({
             isLoading: false,
             extractionResult: report,
             graphData,
         }),
 
-        // 에러 발생 시 상태 업데이트
         setError: (errorMessage) => set({
             isLoading: false,
             extractionResult: `# ❗ 분석 중 오류가 발생했습니다.\n\n${errorMessage}`,
             graphData: { nodes: [], edges: [] },
+            moduleGraphData: { nodes: [], edges: [] },
         }),
 
-        // useAnalysis 훅에 있던 결과 처리 로직을 이곳으로 이동
-        handleAnalysisResult: (result: AnalysisResultPayload | { error: string } | null) => {
-            // 1단계: result가 null인 경우 처리
+        handleAnalysisResult: (result, targetFunction) => {
             if (!result) {
-                get().actions.setError('분석 결과를 찾지 못했습니다.');
+                get().actions.setError('분석 결과를 받지 못했습니다.');
                 return;
             }
 
-            // 2단계: 에러 객체인 경우 처리
             if ('error' in result) {
                 get().actions.setError(result.error || '알 수 없는 오류');
                 return;
             }
 
-            // 3단계: 이제 result는 AnalysisResultPayload 타입임이 확실합니다.
-            //         findings 배열이 비어있는 경우를 처리합니다.
-            if (result.findings.length === 0) {
-                get().actions.setError('분석 결과를 찾지 못했습니다.');
-                return;
-            }
+            switch (result.analysisType) {
+                case 'module-graph':
+                    set({
+                        isLoading: false,
+                        moduleGraphData: { nodes: result.nodes, edges: result.edges },
+                        extractionResult: result.report, // report가 항상 존재하므로 그대로 사용
+                    });
+                    break;
 
-            // 4단계: 모든 검사를 통과한, 내용물이 있는 성공적인 결과만 처리합니다.
-            const { report, graphData } = processAnalysisResult(result);
-            get().actions.setSuccess(report, graphData);
+                // ✨ [신규] React 분석 결과를 처리하는 로직 추가
+                case 'react-analysis':
+                    set({
+                        isLoading: false,
+                        graphData: { nodes: [], edges: [] },
+                        moduleGraphData: { nodes: [], edges: [] },
+                        extractionResult: result.report,
+                    });
+                    break;
+
+                case 'dependency':
+                    if (!result.target || !result.findings) {
+                        get().actions.setError('분석 결과를 찾지 못했습니다.');
+                        return;
+                    }
+                    const { report, graphData } = processAnalysisResult(result, targetFunction);
+                    get().actions.setSuccess(report, graphData);
+                    break;
+
+                default:
+                    get().actions.setError(`알 수 없는 분석 유형입니다.`);
+                    break;
+            }
         }
     }
 }));
 
-// ✨ 컴포넌트에서 액션을 더 쉽게 사용하기 위한 편의 훅
+// 컴포넌트에서 액션을 더 쉽게 사용하기 위한 편의 훅
 export const useAnalysisActions = () => useAnalysisStore((state) => state.actions);
+
