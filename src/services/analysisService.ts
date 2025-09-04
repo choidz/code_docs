@@ -1,18 +1,8 @@
-// src/services/analysisService.ts
-
 import JSZip from "jszip";
 import { type Edge, type Node } from "reactflow";
-import type { DependencyAnalysisResult } from "../core/analysis";
 import { runDependencyAnalysis } from "../core/analysis";
+import type { AnalysisParams, AnalysisResultPayload, DependencyInfo } from "../types";
 import { createDependencyGraphData } from "./graphService";
-// ✨ 중앙 관리되는 타입들을 모두 가져옵니다.
-import type {
-  AnalysisParams,
-  AnalysisResultPayload,
-  DependencyFinding,
-  DependencyInfo,
-  FileFinding,
-} from "../types";
 
 // UI가 사용할 최종 결과물의 타입 정의
 interface ProcessedResult {
@@ -25,8 +15,6 @@ interface ProcessedResult {
 
 /**
  * 웹 브라우저 환경에서 전체 분석 프로세스를 실행합니다.
- * @param params 분석에 필요한 모든 파라미터
- * @returns 분석 결과 데이터
  */
 export const runWebAnalysis = async (
   params: AnalysisParams
@@ -35,24 +23,23 @@ export const runWebAnalysis = async (
     throw new Error("폴더 분석은 데스크톱 앱에서만 지원됩니다.");
   }
 
-  const filesToAnalyze: { name: string; content: string }[] = [];
+  const filesToAnalyze: { name: string; content: string; path: string }[] = [];
 
   if (params.sourceMethod === "paste") {
-    if (!params.pastedCode)
-      throw new Error("분석할 소스 코드를 입력해야 합니다.");
-    filesToAnalyze.push({ name: "붙여넣은 코드", content: params.pastedCode });
+    if (!params.pastedCode) throw new Error("분석할 소스 코드를 입력해야 합니다.");
+    filesToAnalyze.push({ name: "Pasted Code", content: params.pastedCode, path: "pasted.ts" });
   } else if (params.sourceMethod === "upload" && params.selectedFileObject) {
     if (params.selectedFileObject.name.toLowerCase().endsWith(".zip")) {
       const zip = await JSZip.loadAsync(params.selectedFileObject);
       for (const zipEntry of Object.values(zip.files)) {
         if (!zipEntry.dir) {
           const content = await zipEntry.async("string");
-          filesToAnalyze.push({ name: zipEntry.name, content });
+          filesToAnalyze.push({ name: zipEntry.name, content, path: zipEntry.name });
         }
       }
     } else {
       const content = await params.selectedFileObject.text();
-      filesToAnalyze.push({ name: params.selectedFileObject.name, content });
+      filesToAnalyze.push({ name: params.selectedFileObject.name, content, path: params.selectedFileObject.name });
     }
   }
 
@@ -60,73 +47,76 @@ export const runWebAnalysis = async (
     throw new Error("분석할 파일이 없습니다.");
   }
 
-  // ✨ 'any' 대신 명확한 타입을 사용합니다.
-  const finalResult: AnalysisResultPayload = {
-    analysisType: "dependency",
-    target: params.targetFunction,
-    findings: [],
-  };
+  if (params.analysisMode === "dependency") {
+    const analysisResult = runDependencyAnalysis(
+      filesToAnalyze,
+      params.targetFunction
+    );
 
-  for (const file of filesToAnalyze) {
-    // ✨ 'any' 대신 명확한 타입을 사용합니다.
-    let findings: DependencyAnalysisResult | null = null;
-    switch (params.analysisMode) {
-      case "dependency":
-        if (params.targetFunction) {
-          findings = runDependencyAnalysis(file.content, params.targetFunction);
-        }
-        break;
+    if (!analysisResult || !analysisResult.target) {
+      return null;
     }
-    if (findings && findings.target) {
-      finalResult.findings.push({ file: file.name, results: findings });
-    }
-  }
 
-  // 분석된 내용이 없으면 null을 반환할 수 있습니다.
-  if (finalResult.findings.length === 0) {
-    return null;
+    const payload: AnalysisResultPayload = {
+      analysisType: "dependency",
+      target: analysisResult.target,
+      findings: analysisResult.dependencies,
+    };
+    return payload;
   }
-
-  return finalResult;
+  return null;
 };
 
 /**
  * 분석 결과 원본 데이터를 UI에 표시할 리포트와 그래프 데이터로 가공합니다.
- * @param result 분석 결과 원본 객체
- * @returns UI에 필요한 데이터 (리포트, 그래프)
  */
 export const processAnalysisResult = (
-  result: AnalysisResultPayload
+  result: AnalysisResultPayload,
+  targetFunctionName: string
 ): ProcessedResult => {
-  // ✨ useAnalysis 훅에서 이미 null 체크를 하므로, 여기서는 null 체크를 제거해도 안전합니다.
+  // --- 🕵️ 디버깅 콘솔 로그 ---
+  console.log("[Service] processAnalysisResult 시작, 받은 데이터:", result);
+
+  const { target, findings } = result;
 
   let fullReport = `# 📝 분석 결과\n\n`;
-  let graphData: { nodes: Node[]; edges: Edge[] } = { nodes: [], edges: [] };
 
-  // ✨ 'any' 대신 명확한 타입을 사용합니다.
-  result.findings.forEach((findingGroup: FileFinding<DependencyFinding>) => {
-    fullReport += `## 📄 소스: ${findingGroup.file}\n`;
+  if (target) {
+    fullReport += `### 🎯 타겟 함수: \`${targetFunctionName}\`\n\`\`\`javascript\n${target}\n\`\`\`\n\n`;
+  }
 
-    switch (result.analysisType) {
-      case "dependency":
-        const { target, dependencies } = findingGroup.results;
-        graphData = createDependencyGraphData(result.target, dependencies);
-
-        // ✨ target이 null일 수 있는 가능성을 타입이 알려주므로, 안전하게 체크합니다.
-        if (target) {
-          fullReport += `### 🎯 타겟 함수: \`${result.target}\`\n\`\`\`javascript\n${target}\n\`\`\`\n`;
-        }
-
-        if (dependencies.length > 0) {
-          fullReport += `\n#### 📞 호출하는 함수 목록\n`;
-          // ✨ 'any' 대신 명확한 타입을 사용합니다.
-          dependencies.forEach((dep: DependencyInfo) => {
-            fullReport += `\n* **\`${dep.name}\`**\n\`\`\`javascript\n${dep.content}\n\`\`\`\n`;
-          });
-        }
-        break;
+  // ✨ [핵심 수정] findings 배열을 파일 이름(file)으로 그룹화합니다.
+  const groupedByFile = findings.reduce<Record<string, DependencyInfo[]>>((acc, find) => {
+    const key = find.file || 'Unknown File';
+    if (!acc[key]) {
+      acc[key] = [];
     }
-  });
+    acc[key].push(find);
+    return acc;
+  }, {});
+
+  // --- 🕵️ 디버깅 콘솔 로그 ---
+  console.log("[Service] 파일별로 그룹화된 결과:", groupedByFile);
+
+
+  fullReport += `#### 📞 호출하는 함수 목록\n`;
+
+  // ✨ 그룹화된 데이터를 기반으로 원래와 동일한 파일별 마크다운 소제목을 생성합니다.
+  //    이것으로 ResultDisplay.tsx가 폴딩 기능을 다시 렌더링할 수 있습니다.
+  for (const fileName in groupedByFile) {
+    fullReport += `\n## 📄 소스: ${fileName}\n`;
+    groupedByFile[fileName].forEach((dep: DependencyInfo) => {
+      fullReport += `\n* **\`${dep.name}\`**\n\`\`\`javascript\n${dep.content}\n\`\`\`\n`;
+    });
+  }
+
+  const graphData = createDependencyGraphData(targetFunctionName, findings);
+
+  // --- 🕵️ 디버깅 콘솔 로그 ---
+  console.log("[Service] 최종 생성된 리포트:", fullReport);
+  console.log("[Service] 최종 생성된 그래프 데이터:", graphData);
+
 
   return { report: fullReport, graphData };
 };
+
