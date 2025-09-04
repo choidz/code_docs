@@ -44,7 +44,9 @@ const AnalysisForm: React.FC<AnalysisFormProps> = (props) => {
           className="language-select"
         >
           <option value="dependency">🔗 함수 의존성 분석 (JS/TS)</option>
+          <option value="react-analysis">⚛️ React 특화 분석</option>
           {/* ✨ [추가] isElectron일 때만 모듈 분석과 히트맵 옵션 표시 */}
+
           {props.isElectron && (
             <>
               <option value="module">🗺️ 모듈 의존성 그래프 (JS/TS)</option>
@@ -93,8 +95,8 @@ const AnalysisForm: React.FC<AnalysisFormProps> = (props) => {
                   value="upload"
                   checked={props.sourceMethod === "upload"}
                   onChange={(e) => props.setSourceMethod(e.target.value as any)}
-                  // ✨ [추가] 모듈 분석 모드일 때는 비활성화
-                  disabled={props.analysisMode === "module"}
+                // ✨ [추가] 모듈 분석 모드일 때는 비활성화
+                // disabled={props.analysisMode === "module"}
                 />
                 파일/ZIP 업로드
               </label>
